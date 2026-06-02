@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>长寿经济产业图谱</title>
+    <meta
+      name="description"
+      content="面向长寿经济产业链上下游企业的开源产业图谱、资源查询和协作目录。"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="#top" aria-label="长寿经济产业图谱首页">
+        <span class="brand-mark">L</span>
+        <span>长寿经济产业图谱</span>
+      </a>
+      <nav class="nav" aria-label="主要导航">
+        <a href="#map">图谱</a>
+        <a href="#directory">企业目录</a>
+        <a href="#resources">资源</a>
+        <a href="#contribute">共建</a>
+      </nav>
+    </header>
+
+    <main id="top">
+      <section class="workspace" aria-labelledby="page-title">
+        <div class="workspace-header">
+          <div>
+            <p class="eyebrow">Open longevity economy atlas</p>
+            <h1 id="page-title">长寿经济产业链查询工作台</h1>
+          </div>
+          <div class="source-note">
+            <span>数据口径</span>
+            <strong>健康老龄化、适老科技、医疗服务、养老金融、城市与生活方式</strong>
+          </div>
+        </div>
+
+        <div class="query-panel" aria-label="查询控件">
+          <label class="search-box">
+            <span>搜索关键词</span>
+            <input
+              id="searchInput"
+              type="search"
+              placeholder="例如：康复机器人、保险、养老机构、检测"
+              autocomplete="off"
+            />
+          </label>
+
+          <fieldset class="segments" aria-label="产业环节">
+            <legend>产业环节</legend>
+            <button class="segment is-active" type="button" data-filter="all">全部</button>
+            <button class="segment" type="button" data-filter="upstream">上游</button>
+            <button class="segment" type="button" data-filter="midstream">中游</button>
+            <button class="segment" type="button" data-filter="downstream">下游</button>
+            <button class="segment" type="button" data-filter="support">支撑</button>
+          </fieldset>
+        </div>
+
+        <section class="map-layout" id="map" aria-labelledby="map-title">
+          <div class="map-copy">
+            <p class="section-kicker">产业图谱</p>
+            <h2 id="map-title">从“活得更久”到“活得更好”的供需网络</h2>
+            <p>
+              图谱把产业链拆成研发供给、产品服务、终端场景和基础支撑四层。点击节点可以筛选企业与资源，帮助上下游快速找到合作对象、政策入口、数据来源和待补齐的能力。
+            </p>
+            <div class="metrics" aria-label="图谱统计">
+              <div><strong id="nodeCount">0</strong><span>产业节点</span></div>
+              <div><strong id="companyCount">0</strong><span>企业样例</span></div>
+              <div><strong id="resourceCount">0</strong><span>资源入口</span></div>
+            </div>
+          </div>
+          <div class="map-stage" aria-label="长寿经济产业链可视化图谱">
+            <svg id="industryMap" viewBox="0 0 880 560" role="img" aria-labelledby="mapSvgTitle">
+              <title id="mapSvgTitle">长寿经济产业链节点关系图</title>
+              <g id="linkLayer"></g>
+              <g id="nodeLayer"></g>
+            </svg>
+          </div>
+        </section>
+      </section>
+
+      <section class="content-band" id="directory" aria-labelledby="directory-title">
+        <div class="section-heading">
+          <div>
+            <p class="section-kicker">Directory</p>
+            <h2 id="directory-title">企业与机构样例</h2>
+          </div>
+          <p>第一版使用示例数据，适合后续通过 GitHub issue 或 PR 持续补充。</p>
+        </div>
+        <div id="companyGrid" class="item-grid" aria-live="polite"></div>
+      </section>
+
+      <section class="content-band alt" id="resources" aria-labelledby="resources-title">
+        <div class="section-heading">
+          <div>
+            <p class="section-kicker">Resources</p>
+            <h2 id="resources-title">政策、报告与协作资源</h2>
+          </div>
+          <p>优先放置公开、可验证、能帮助企业判断市场和合规方向的入口。</p>
+        </div>
+        <div id="resourceList" class="resource-list" aria-live="polite"></div>
+      </section>
+
+      <section class="contribute" id="contribute" aria-labelledby="contribute-title">
+        <div>
+          <p class="section-kicker">Open source</p>
+          <h2 id="contribute-title">让产业链自己长出来</h2>
+          <p>
+            适合开放的数据包括企业名录、产品能力、适用场景、合作需求、政策链接、报告摘要、城市试点和投资事件。建议每条记录保留来源链接、更新时间和贡献人，方便社区审阅。
+          </p>
+        </div>
+        <div class="contribute-actions">
+          <a class="primary-action" href="./README.md">查看开源说明</a>
+          <a class="secondary-action" href="https://github.com/new" target="_blank" rel="noreferrer">创建 GitHub 仓库</a>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <span>长寿经济产业图谱</span>
+      <span>CC BY 4.0 data proposal · MIT website code proposal</span>
+    </footer>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
