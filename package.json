@@ -1,0 +1,12 @@
+{
+  "name": "longevity-economy-atlas",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Open longevity economy industry atlas with BioBAY as the first regional benchmark case.",
+  "type": "module",
+  "scripts": {
+    "validate": "node scripts/validate-static-site.mjs",
+    "check:js": "node --check app.js"
+  },
+  "license": "MIT"
+}

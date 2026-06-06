@@ -6,7 +6,11 @@
     <title>长寿经济产业图谱</title>
     <meta
       name="description"
-      content="面向长寿经济产业链上下游企业的开源产业图谱、资源查询和协作目录。"
+      content="面向长寿经济产业链上下游企业的开源产业图谱、地域产业聚集地案例、企业能力样例和政策资源目录。"
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23176b53'/%3E%3Ctext x='32' y='42' text-anchor='middle' font-family='Arial' font-size='34' font-weight='700' fill='white'%3EB%3C/text%3E%3C/svg%3E"
     />
     <link rel="stylesheet" href="./styles.css" />
   </head>
@@ -18,6 +22,10 @@
       </a>
       <nav class="nav" aria-label="主要导航">
         <a href="#map">图谱</a>
+        <a href="#clusters">产业聚集地</a>
+        <a href="#matchmaking">合作需求</a>
+        <a href="#watchlist">双榜单</a>
+        <a href="#daily-report">日报</a>
         <a href="#directory">企业目录</a>
         <a href="#resources">资源</a>
         <a href="#contribute">共建</a>
@@ -29,11 +37,11 @@
         <div class="workspace-header">
           <div>
             <p class="eyebrow">Open longevity economy atlas</p>
-            <h1 id="page-title">长寿经济产业链查询工作台</h1>
+            <h1 id="page-title">长寿经济产业链与地域集群图谱</h1>
           </div>
           <div class="source-note">
             <span>数据口径</span>
-            <strong>健康老龄化、适老科技、医疗服务、养老金融、城市与生活方式</strong>
+            <strong>产业链四层 16 节点 + 地域产业聚集地案例库</strong>
           </div>
         </div>
 
@@ -43,7 +51,7 @@
             <input
               id="searchInput"
               type="search"
-              placeholder="例如：康复机器人、保险、养老机构、检测"
+              placeholder="例如：靶点组学、AI制药、IVD、康复辅具、支付保险"
               autocomplete="off"
             />
           </label>
@@ -58,27 +66,126 @@
           </fieldset>
         </div>
 
+        <section class="value-strip" aria-label="长寿经济的共建价值">
+          <article>
+            <span>给程序员</span>
+            <p>把“我能不能活得足够久”翻译成可以参与的技术、数据、产品和开源问题。</p>
+          </article>
+          <article>
+            <span>给企业</span>
+            <p>从产业链上找到临床、康养、支付、出海和政策资源，而不是独自摸索市场入口。</p>
+          </article>
+          <article>
+            <span>给城市</span>
+            <p>把园区、医院、养老机构和资本连接成健康寿命延长的区域能力。</p>
+          </article>
+          <article>
+            <span>给每个人</span>
+            <p>长寿不是只多几年时间，而是尽量多几年能行动、能选择、能被好好照护的生活。</p>
+          </article>
+        </section>
+
+        <section class="action-paths" aria-labelledby="action-paths-title">
+          <div>
+            <p class="section-kicker">From concern to action</p>
+            <h2 id="action-paths-title">四种进入长寿经济产业链的方式</h2>
+          </div>
+          <div class="path-grid">
+            <a href="#watchlist" class="path-card">
+              <span>技术与开源</span>
+              <strong>把延寿焦虑变成可维护的数据、工具和监测系统。</strong>
+            </a>
+            <a href="#clusters" class="path-card">
+              <span>企业合作</span>
+              <strong>围绕园区、临床、康养和支付寻找上下游接口。</strong>
+            </a>
+            <a href="#resources" class="path-card">
+              <span>城市与园区</span>
+              <strong>用政策、场景和资本把单点技术组织成区域能力。</strong>
+            </a>
+            <a href="#directory" class="path-card">
+              <span>照护与产品</span>
+              <strong>从早筛、治疗、康复到照护，识别真正改善生活质量的产品。</strong>
+            </a>
+          </div>
+        </section>
+
         <section class="map-layout" id="map" aria-labelledby="map-title">
           <div class="map-copy">
             <p class="section-kicker">产业图谱</p>
             <h2 id="map-title">从“活得更久”到“活得更好”的供需网络</h2>
             <p>
-              图谱把产业链拆成研发供给、产品服务、终端场景和基础支撑四层。点击节点可以筛选企业与资源，帮助上下游快速找到合作对象、政策入口、数据来源和待补齐的能力。
+              主图谱把长寿经济拆成上游研发、中游药械与数字产品、下游医疗康养服务、支撑平台生态 16 个节点。点击节点可以筛选企业能力与政策资源，快速定位“健康寿命延长”的合作方向。
             </p>
             <div class="metrics" aria-label="图谱统计">
               <div><strong id="nodeCount">0</strong><span>产业节点</span></div>
-              <div><strong id="companyCount">0</strong><span>企业样例</span></div>
+              <div><strong id="companyCount">0</strong><span>能力样例</span></div>
               <div><strong id="resourceCount">0</strong><span>资源入口</span></div>
             </div>
           </div>
           <div class="map-stage" aria-label="长寿经济产业链可视化图谱">
             <svg id="industryMap" viewBox="0 0 880 560" role="img" aria-labelledby="mapSvgTitle">
-              <title id="mapSvgTitle">长寿经济产业链节点关系图</title>
+              <title id="mapSvgTitle">苏州 BioBAY 长寿经济产业链节点关系图</title>
               <g id="linkLayer"></g>
               <g id="nodeLayer"></g>
             </svg>
           </div>
         </section>
+      </section>
+
+      <section class="content-band cluster-band" id="clusters" aria-labelledby="clusters-title">
+        <div class="section-heading">
+          <div>
+            <p class="section-kicker">Regional clusters</p>
+            <h2 id="clusters-title">产业聚集地案例库</h2>
+          </div>
+          <p>长寿经济不会只长在一家公司里，它会在药械园区、医疗资源、康养场景、金融支付和城市治理之间形成地域网络。</p>
+        </div>
+        <div class="cluster-intro">
+          <strong>首个标杆案例：苏州 BioBAY</strong>
+          <span>把生物医药园区视为长寿经济的“创新药械策源地 + 转化平台 + 康养科技试验场”，并作为后续地域案例的共建模板。</span>
+        </div>
+        <div id="clusterGrid" class="cluster-grid" aria-live="polite"></div>
+      </section>
+
+      <section class="content-band" id="matchmaking" aria-labelledby="matchmaking-title">
+        <div class="section-heading">
+          <div>
+            <p class="section-kicker">Matchmaking radar</p>
+            <h2 id="matchmaking-title">合作需求雷达</h2>
+          </div>
+          <p>把“我有产品或能力”翻译成“我该找哪些场景、政策、支付和产业伙伴”，帮助上下游企业更快定位下一步资源。</p>
+        </div>
+        <div id="needGrid" class="need-grid" aria-live="polite"></div>
+      </section>
+
+      <section class="content-band" id="watchlist" aria-labelledby="watchlist-title">
+        <div class="section-heading">
+          <div>
+            <p class="section-kicker">Watchlist</p>
+            <h2 id="watchlist-title">全球 + 中国长寿经济双榜单</h2>
+          </div>
+          <p>榜单按业务相关性、成长性、护城河、市场空间和每日可跟踪性评分，优先选择有明确催化、公开资料可验证的企业。</p>
+        </div>
+        <div class="score-model" aria-label="评分模型">
+          <span>业务相关性 25</span>
+          <span>成长性 25</span>
+          <span>护城河 20</span>
+          <span>政策与市场空间 15</span>
+          <span>每日可跟踪性 15</span>
+        </div>
+        <div id="watchlistGrid" class="watchlist-grid" aria-live="polite"></div>
+      </section>
+
+      <section class="content-band alt" id="daily-report" aria-labelledby="daily-report-title">
+        <div class="section-heading">
+          <div>
+            <p class="section-kicker">Daily brief</p>
+            <h2 id="daily-report-title">每日研报监测模板</h2>
+          </div>
+          <p>每天北京时间早上 8:00 跟踪 6 家企业的新闻、公告、融资、临床、合作、股价和风险变化，输出中文研究简报。</p>
+        </div>
+        <div id="dailyReportList" class="daily-report-list"></div>
       </section>
 
       <section class="content-band" id="directory" aria-labelledby="directory-title">
@@ -87,7 +194,7 @@
             <p class="section-kicker">Directory</p>
             <h2 id="directory-title">企业与机构样例</h2>
           </div>
-          <p>第一版使用示例数据，适合后续通过 GitHub issue 或 PR 持续补充。</p>
+          <p>第一版按上游、中游、下游、支撑四类整理能力样例，BioBAY 作为第一个地域案例，后续可以继续补充更多产业园区、城市和产品场景。</p>
         </div>
         <div id="companyGrid" class="item-grid" aria-live="polite"></div>
       </section>
@@ -98,9 +205,56 @@
             <p class="section-kicker">Resources</p>
             <h2 id="resources-title">政策、报告与协作资源</h2>
           </div>
-          <p>优先放置公开、可验证、能帮助企业判断市场和合规方向的入口。</p>
+          <p>优先放置公开、可验证、能支撑长寿经济产业链判断的政策、报告、园区资讯和研究材料。</p>
         </div>
         <div id="resourceList" class="resource-list" aria-live="polite"></div>
+      </section>
+
+      <section class="content-band trust-band" id="evidence" aria-labelledby="evidence-title">
+        <div class="section-heading">
+          <div>
+            <p class="section-kicker">Evidence model</p>
+            <h2 id="evidence-title">让每条产业判断都能被追问</h2>
+          </div>
+          <p>这个图谱欢迎观点，但每个观点都应该能回到事实、来源和下一步验证问题。越能被追问，越适合作为企业合作和开源共建的基础。</p>
+        </div>
+        <div class="trust-grid">
+          <article>
+            <span>事实层</span>
+            <strong>官方介绍、政策文件、企业公告、上市产品、融资和临床进展。</strong>
+            <p>用于证明“主体存在、产品存在、政策存在、交易存在”。</p>
+          </article>
+          <article>
+            <span>连接层</span>
+            <strong>把企业能力映射到早筛、治疗、康复、照护、支付和出海链路。</strong>
+            <p>用于解释“为什么它属于长寿经济”，并标明依据和边界。</p>
+          </article>
+          <article>
+            <span>验证层</span>
+            <strong>保留待验证问题、更新时间、贡献者和来源链接。</strong>
+            <p>用于邀请园区、企业、研究者和开发者继续补证据。</p>
+          </article>
+        </div>
+        <p class="trust-note">
+          医疗、金融和政策信息仅用于产业研究与资源导航，不构成医疗、投资或法律建议。
+        </p>
+        <div class="status-grid" aria-label="数据状态">
+          <article>
+            <span>已验证</span>
+            <strong>BioBAY 标杆案例、16 个产业节点、18 个资源入口。</strong>
+            <p>优先使用园区官网、政府文件、企业公告和公开报道。</p>
+          </article>
+          <article>
+            <span>待验证</span>
+            <strong>其他城市园区、康养采购清单、支付转化效果、产品真实世界数据。</strong>
+            <p>保留为下一步验证问题，适合企业、园区和研究者继续补证据。</p>
+          </article>
+          <article>
+            <span>建议频率</span>
+            <strong>政策和园区动态月更，企业公告和临床融资事件周更。</strong>
+            <p>重大产品获批、纳入医保商保、出海 BD 和采购试点应及时更新。</p>
+          </article>
+        </div>
       </section>
 
       <section class="contribute" id="contribute" aria-labelledby="contribute-title">
@@ -108,19 +262,60 @@
           <p class="section-kicker">Open source</p>
           <h2 id="contribute-title">让产业链自己长出来</h2>
           <p>
-            适合开放的数据包括企业名录、产品能力、适用场景、合作需求、政策链接、报告摘要、城市试点和投资事件。建议每条记录保留来源链接、更新时间和贡献人，方便社区审阅。
+            后续建议补充企业名录、产品能力、适应症或应用场景、研发阶段、注册上市进展、合作需求、政策链接、临床与康养场景，以及不同城市/园区的产业聚集地案例。每条记录保留来源链接和更新时间，方便审阅。
           </p>
         </div>
         <div class="contribute-actions">
-          <a class="primary-action" href="./README.md">查看开源说明</a>
-          <a class="secondary-action" href="https://github.com/new" target="_blank" rel="noreferrer">创建 GitHub 仓库</a>
+          <a class="primary-action" href="./苏州BioBAY长寿经济产业图谱.md">查看 BioBAY 案例</a>
+          <a class="secondary-action" href="./CONTRIBUTING.md">查看贡献指南</a>
+          <a class="secondary-action" href="https://github.com/proteinb/longevity-economy-atlas" target="_blank" rel="noreferrer">查看 GitHub 仓库</a>
+          <a class="secondary-action" href="https://github.com/proteinb/longevity-economy-atlas/issues/new/choose" target="_blank" rel="noreferrer">提交数据线索</a>
+        </div>
+      </section>
+
+      <section class="content-band contribution-kit" aria-labelledby="contribution-kit-title">
+        <div class="section-heading">
+          <div>
+            <p class="section-kicker">Contribution kit</p>
+            <h2 id="contribution-kit-title">三类最值得补充的数据</h2>
+          </div>
+          <p>好的开源图谱不是一次写完，而是让每个人都能补一块可信的小砖。下面三类数据最容易被产业链上下游复用。</p>
+        </div>
+        <div class="template-grid">
+          <article class="template-card">
+            <span>企业能力</span>
+            <h3>补一家企业或机构</h3>
+            <ul>
+              <li>名称、城市、所属节点、产品或能力</li>
+              <li>正在寻找的临床、康养、支付、出海或技术资源</li>
+              <li>公开来源链接、更新时间、待验证问题</li>
+            </ul>
+          </article>
+          <article class="template-card">
+            <span>地域样本</span>
+            <h3>补一个城市或园区</h3>
+            <ul>
+              <li>企业规模、重点集群、政策工具、代表企业</li>
+              <li>早筛、治疗、康复、产业化等转化链</li>
+              <li>真实应用场景、采购机制、支付路径和短板</li>
+            </ul>
+          </article>
+          <article class="template-card">
+            <span>产品案例</span>
+            <h3>补一个真实产品或机制</h3>
+            <ul>
+              <li>产品名称、适应症或场景、当前证据</li>
+              <li>长寿经济价值：早筛、治疗、功能维持或照护减负</li>
+              <li>注册、上市、采购、医保商保或真实世界数据状态</li>
+            </ul>
+          </article>
         </div>
       </section>
     </main>
 
     <footer class="footer">
       <span>长寿经济产业图谱</span>
-      <span>CC BY 4.0 data proposal · MIT website code proposal</span>
+      <span>开源调研原型 · 可持续补充企业、政策与地域集群数据</span>
     </footer>
 
     <script src="./app.js"></script>
