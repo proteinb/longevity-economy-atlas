@@ -45,6 +45,12 @@ npm run validate
 
 没有 npm 时可以直接运行 `node scripts/validate-static-site.mjs`。它会检查核心文件、BioBAY 标杆案例、合作需求、证据模型、贡献模板、GitHub issue 模板、GitHub Actions 配置和 `app.js` 语法。仓库已配置 GitHub Actions，会在 push 和 pull request 时自动运行同一套校验。
 
+## GitHub Pages 发布
+
+仓库已包含 `.github/workflows/pages.yml`。推送到 `main` 后，GitHub Actions 会先运行 `npm run validate`，再通过 GitHub Pages 部署当前静态站点。
+
+如果是第一次启用 Pages，请在 GitHub 仓库的 Settings → Pages 中选择 GitHub Actions 作为发布来源。
+
 ## 建议的数据结构
 
 企业或机构记录建议包含：

@@ -13,6 +13,7 @@ const requiredFiles = [
   "苏州BioBAY长寿经济产业图谱.md",
   "全球长寿经济市场分析与三家高成长企业.md",
   ".github/workflows/validate.yml",
+  ".github/workflows/pages.yml",
   ".github/ISSUE_TEMPLATE/enterprise-capability.md",
   ".github/ISSUE_TEMPLATE/regional-cluster.md",
   ".github/ISSUE_TEMPLATE/product-case.md",
@@ -36,6 +37,8 @@ const contentChecks = [
   ["CONTRIBUTING.md", "产品案例模板"],
   ["package.json", "\"validate\": \"node scripts/validate-static-site.mjs\""],
   [".github/workflows/validate.yml", "npm run validate"],
+  [".github/workflows/pages.yml", "actions/deploy-pages@v4"],
+  [".github/workflows/pages.yml", "npm run validate"],
   ["苏州BioBAY长寿经济产业图谱.md", "代表企业/主体案例"],
   ["苏州BioBAY长寿经济产业图谱.md", "真实产品/机制案例"],
 ];
