@@ -34,10 +34,21 @@
 
     <main id="top">
       <section class="workspace" aria-labelledby="page-title">
+        <div class="bio-grid-bg" aria-hidden="true"></div>
+        <div class="bio-orbit-field" aria-hidden="true">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
         <div class="workspace-header">
           <div>
             <p class="eyebrow">Open longevity economy atlas</p>
             <h1 id="page-title">长寿经济产业链与地域集群图谱</h1>
+            <div class="mission-strip" aria-label="图谱运行状态">
+              <span>16 nodes online</span>
+              <span>BioBAY benchmark</span>
+              <span>open atlas protocol</span>
+            </div>
           </div>
           <div class="source-note">
             <span>数据口径</span>
@@ -124,10 +135,38 @@
             </div>
           </div>
           <div class="map-stage" aria-label="长寿经济产业链可视化图谱">
+            <div class="map-toolbar" aria-label="图谱视图控制">
+              <button id="zoomOut" type="button" aria-label="缩小图谱">−</button>
+              <button id="zoomReset" type="button">重置视图</button>
+              <button id="zoomIn" type="button" aria-label="放大图谱">+</button>
+            </div>
+            <div id="nodeTooltip" class="node-tooltip" role="status" aria-live="polite"></div>
             <svg id="industryMap" viewBox="0 0 880 560" role="img" aria-labelledby="mapSvgTitle">
               <title id="mapSvgTitle">苏州 BioBAY 长寿经济产业链节点关系图</title>
-              <g id="linkLayer"></g>
-              <g id="nodeLayer"></g>
+              <defs>
+                <filter id="nodeGlow" x="-80%" y="-80%" width="260%" height="260%">
+                  <feGaussianBlur stdDeviation="7" result="blur" />
+                  <feColorMatrix
+                    in="blur"
+                    type="matrix"
+                    values="0 0 0 0 0.19 0 0 0 0 0.92 0 0 0 0 0.82 0 0 0 0.95 0"
+                    result="glow"
+                  />
+                  <feMerge>
+                    <feMergeNode in="glow" />
+                    <feMergeNode in="SourceGraphic" />
+                  </feMerge>
+                </filter>
+                <marker id="arrowPulse" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+                  <path d="M 0 0 L 10 5 L 0 10 z" />
+                </marker>
+              </defs>
+              <rect class="map-hitbox" width="880" height="560"></rect>
+              <g id="mapViewport">
+                <g id="laneLayer"></g>
+                <g id="linkLayer"></g>
+                <g id="nodeLayer"></g>
+              </g>
             </svg>
           </div>
         </section>

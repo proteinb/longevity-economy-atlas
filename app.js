@@ -585,10 +585,17 @@ const state = {
   filter: "all",
   query: "",
   selectedNode: null,
+  lockedNode: null,
+  hoveredNode: null,
+  mapTransform: { x: 0, y: 0, scale: 1 },
+  isPanning: false,
+  didPan: false,
+  panStart: { x: 0, y: 0, originX: 0, originY: 0 },
 };
 
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => Array.from(document.querySelectorAll(selector));
+const svgNs = "http://www.w3.org/2000/svg";
 
 function includesQuery(item) {
   if (!state.query) return true;
@@ -602,61 +609,167 @@ function matchesFilters(item) {
   return stageMatch && nodeMatch && includesQuery(item);
 }
 
+function getRelatedNodeIds(nodeId) {
+  if (!nodeId) return new Set();
+  const related = new Set([nodeId]);
+  links.forEach(([fromId, toId]) => {
+    if (fromId === nodeId) related.add(toId);
+    if (toId === nodeId) related.add(fromId);
+  });
+  return related;
+}
+
+function isRelatedLink(link, nodeId) {
+  return nodeId && (link[0] === nodeId || link[1] === nodeId);
+}
+
+function getNodeStats(nodeId) {
+  const nodeNeeds = matchmakingNeeds.filter((need) => need.node === nodeId);
+  return {
+    companies: companies.filter((company) => company.node === nodeId).length,
+    resources: resources.filter((resource) => resource.node === nodeId).length,
+    needs: nodeNeeds.length,
+    summary: nodeNeeds[0]?.question || "该节点正在等待更多企业能力、真实场景和政策资源补充。",
+  };
+}
+
+function setMapTransform() {
+  const viewport = $("#mapViewport");
+  if (!viewport) return;
+  const { x, y, scale } = state.mapTransform;
+  viewport.setAttribute("transform", `translate(${x} ${y}) scale(${scale})`);
+}
+
+function showNodeTooltip(node, event) {
+  const tooltip = $("#nodeTooltip");
+  const stage = $(".map-stage");
+  if (!tooltip || !stage) return;
+  const stats = getNodeStats(node.id);
+  const bounds = stage.getBoundingClientRect();
+  const left = Math.min(Math.max(event.clientX - bounds.left + 18, 14), bounds.width - 300);
+  const top = Math.min(Math.max(event.clientY - bounds.top + 18, 54), bounds.height - 180);
+
+  tooltip.innerHTML = `
+    <span>${node.type} / ${node.name}</span>
+    <strong>${stats.companies} 个能力样例 · ${stats.resources} 个资源入口 · ${stats.needs} 条合作需求</strong>
+    <p>${stats.summary}</p>
+  `;
+  tooltip.style.left = `${left}px`;
+  tooltip.style.top = `${top}px`;
+  tooltip.classList.add("is-visible");
+}
+
+function hideNodeTooltip() {
+  const tooltip = $("#nodeTooltip");
+  if (tooltip) tooltip.classList.remove("is-visible");
+}
+
+function clampScale(scale) {
+  return Math.min(1.8, Math.max(0.68, scale));
+}
+
 function drawMap() {
+  const laneLayer = $("#laneLayer");
   const linkLayer = $("#linkLayer");
   const nodeLayer = $("#nodeLayer");
+  laneLayer.innerHTML = "";
   linkLayer.innerHTML = "";
   nodeLayer.innerHTML = "";
+  setMapTransform();
+
+  const activeNode = state.lockedNode || state.hoveredNode;
+  const relatedNodes = getRelatedNodeIds(activeNode);
 
   [
-    { label: "上游：研发与技术源头", x: 105 },
-    { label: "中游：产品与解决方案", x: 315 },
-    { label: "下游：服务与支付场景", x: 555 },
-    { label: "支撑：平台与生态要素", x: 765 },
+    { label: "上游：研发与技术源头", x: 105, minX: 20, width: 170 },
+    { label: "中游：产品与解决方案", x: 315, minX: 230, width: 170 },
+    { label: "下游：服务与支付场景", x: 555, minX: 470, width: 170 },
+    { label: "支撑：平台与生态要素", x: 765, minX: 690, width: 170 },
   ].forEach((lane) => {
-    const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    const band = document.createElementNS(svgNs, "rect");
+    band.setAttribute("class", "lane-band");
+    band.setAttribute("x", lane.minX);
+    band.setAttribute("y", "52");
+    band.setAttribute("width", lane.width);
+    band.setAttribute("height", "440");
+    band.setAttribute("rx", "30");
+    laneLayer.appendChild(band);
+
+    const label = document.createElementNS(svgNs, "text");
     label.setAttribute("class", "lane-label");
     label.setAttribute("x", lane.x);
     label.setAttribute("y", "28");
     label.textContent = lane.label;
-    linkLayer.appendChild(label);
+    laneLayer.appendChild(label);
   });
 
   links.forEach(([fromId, toId]) => {
     const from = nodes.find((node) => node.id === fromId);
     const to = nodes.find((node) => node.id === toId);
-    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    const path = document.createElementNS(svgNs, "path");
     const midX = (from.x + to.x) / 2;
     const midY = (from.y + to.y) / 2 - 35;
-    path.setAttribute("class", "link");
+    const related = isRelatedLink([fromId, toId], activeNode);
+    path.setAttribute("class", `link${related ? " is-related" : ""}${activeNode && !related ? " is-muted" : ""}`);
     path.setAttribute("d", `M ${from.x} ${from.y} Q ${midX} ${midY} ${to.x} ${to.y}`);
+    path.setAttribute("marker-end", "url(#arrowPulse)");
     linkLayer.appendChild(path);
   });
 
   nodes.forEach((node) => {
-    const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
-    const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-    const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
-    const type = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    const group = document.createElementNS(svgNs, "g");
+    const halo = document.createElementNS(svgNs, "circle");
+    const pulse = document.createElementNS(svgNs, "circle");
+    const circle = document.createElementNS(svgNs, "circle");
+    const core = document.createElementNS(svgNs, "circle");
+    const label = document.createElementNS(svgNs, "text");
+    const type = document.createElementNS(svgNs, "text");
 
     const visibleByStage = state.filter === "all" || node.stage === state.filter;
     const selected = state.selectedNode === node.id;
-    group.setAttribute("class", `node-button${visibleByStage ? "" : " is-dimmed"}${selected ? " is-selected" : ""}`);
+    const hovered = state.hoveredNode === node.id;
+    const unrelated = activeNode && !relatedNodes.has(node.id);
+    group.setAttribute(
+      "class",
+      `node-button${visibleByStage ? "" : " is-dimmed"}${selected ? " is-selected" : ""}${hovered ? " is-hovered" : ""}${unrelated ? " is-unrelated" : ""}`,
+    );
     group.setAttribute("tabindex", "0");
     group.setAttribute("role", "button");
     group.setAttribute("aria-label", `筛选 ${node.name}`);
     group.setAttribute("transform", `translate(${node.x} ${node.y})`);
 
+    halo.setAttribute("class", "node-halo");
+    halo.setAttribute("r", "56");
+    halo.setAttribute("fill", node.color);
+    pulse.setAttribute("class", "node-pulse");
+    pulse.setAttribute("r", "54");
     circle.setAttribute("r", "44");
     circle.setAttribute("fill", node.color);
+    core.setAttribute("class", "node-core");
+    core.setAttribute("r", "13");
+    core.setAttribute("cy", "-12");
     label.setAttribute("y", "2");
     label.textContent = node.name;
     type.setAttribute("class", "node-type");
     type.setAttribute("y", "24");
     type.textContent = node.type;
 
-    group.append(circle, label, type);
-    group.addEventListener("click", () => selectNode(node.id));
+    group.append(halo, pulse, circle, core, label, type);
+    group.addEventListener("pointerenter", (event) => {
+      state.hoveredNode = node.id;
+      showNodeTooltip(node, event);
+      drawMap();
+    });
+    group.addEventListener("pointermove", (event) => showNodeTooltip(node, event));
+    group.addEventListener("pointerleave", () => {
+      state.hoveredNode = null;
+      hideNodeTooltip();
+      drawMap();
+    });
+    group.addEventListener("click", (event) => {
+      event.stopPropagation();
+      selectNode(node.id);
+    });
     group.addEventListener("keydown", (event) => {
       if (event.key === "Enter" || event.key === " ") {
         event.preventDefault();
@@ -668,8 +781,24 @@ function drawMap() {
 }
 
 function selectNode(nodeId) {
-  state.selectedNode = state.selectedNode === nodeId ? null : nodeId;
+  state.lockedNode = state.lockedNode === nodeId ? null : nodeId;
+  state.selectedNode = state.lockedNode;
   render();
+}
+
+function resetMapView() {
+  state.mapTransform = { x: 0, y: 0, scale: 1 };
+  state.lockedNode = null;
+  state.selectedNode = null;
+  state.hoveredNode = null;
+  hideNodeTooltip();
+  render();
+}
+
+function zoomMap(multiplier) {
+  const nextScale = clampScale(state.mapTransform.scale * multiplier);
+  state.mapTransform = { ...state.mapTransform, scale: nextScale };
+  setMapTransform();
 }
 
 function renderCompanies() {
@@ -924,11 +1053,74 @@ function bindEvents() {
   $$(".segment").forEach((button) => {
     button.addEventListener("click", () => {
       state.filter = button.dataset.filter;
+      state.lockedNode = null;
       state.selectedNode = null;
       $$(".segment").forEach((item) => item.classList.toggle("is-active", item === button));
       render();
     });
   });
+
+  const map = $("#industryMap");
+  map.addEventListener("pointerdown", (event) => {
+    state.isPanning = true;
+    state.didPan = false;
+    state.panStart = {
+      x: event.clientX,
+      y: event.clientY,
+      originX: state.mapTransform.x,
+      originY: state.mapTransform.y,
+    };
+    map.setPointerCapture(event.pointerId);
+    map.classList.add("is-panning");
+  });
+
+  map.addEventListener("pointermove", (event) => {
+    if (!state.isPanning) return;
+    const dx = event.clientX - state.panStart.x;
+    const dy = event.clientY - state.panStart.y;
+    if (Math.abs(dx) > 2 || Math.abs(dy) > 2) state.didPan = true;
+    state.mapTransform.x = state.panStart.originX + dx;
+    state.mapTransform.y = state.panStart.originY + dy;
+    setMapTransform();
+  });
+
+  map.addEventListener("pointerup", (event) => {
+    if (state.isPanning) {
+      map.releasePointerCapture(event.pointerId);
+      map.classList.remove("is-panning");
+    }
+    state.isPanning = false;
+  });
+
+  map.addEventListener("pointercancel", () => {
+    state.isPanning = false;
+    map.classList.remove("is-panning");
+  });
+
+  map.addEventListener("click", (event) => {
+    if (state.didPan) {
+      state.didPan = false;
+      return;
+    }
+    if (event.target.classList.contains("map-hitbox")) {
+      state.lockedNode = null;
+      state.selectedNode = null;
+      render();
+    }
+  });
+
+  map.addEventListener(
+    "wheel",
+    (event) => {
+      event.preventDefault();
+      zoomMap(event.deltaY > 0 ? 0.92 : 1.08);
+    },
+    { passive: false },
+  );
+
+  $("#zoomOut").addEventListener("click", () => zoomMap(0.88));
+  $("#zoomIn").addEventListener("click", () => zoomMap(1.12));
+  $("#zoomReset").addEventListener("click", resetMapView);
 }
 
 bindEvents();
