@@ -586,6 +586,7 @@ const state = {
   query: "",
   selectedNode: null,
   lockedNode: null,
+  hoveredNode: null,
   mapTransform: { x: 0, y: 0, scale: 1 },
   isPanning: false,
   didPan: false,
@@ -642,7 +643,7 @@ function drawMap() {
   nodeLayer.innerHTML = "";
   setMapTransform();
 
-  const activeNode = state.lockedNode;
+  const activeNode = state.lockedNode || state.hoveredNode;
   const relatedNodes = getRelatedNodeIds(activeNode);
 
   [
@@ -692,10 +693,11 @@ function drawMap() {
 
     const visibleByStage = state.filter === "all" || node.stage === state.filter;
     const selected = state.selectedNode === node.id;
+    const hovered = state.hoveredNode === node.id;
     const unrelated = activeNode && !relatedNodes.has(node.id);
     group.setAttribute(
       "class",
-      `node-button${visibleByStage ? "" : " is-dimmed"}${selected ? " is-selected" : ""}${unrelated ? " is-unrelated" : ""}`,
+      `node-button${visibleByStage ? "" : " is-dimmed"}${selected ? " is-selected" : ""}${hovered ? " is-hovered" : ""}${unrelated ? " is-unrelated" : ""}`,
     );
     group.setAttribute("tabindex", "0");
     group.setAttribute("role", "button");
@@ -719,6 +721,20 @@ function drawMap() {
     type.textContent = node.type;
 
     group.append(halo, pulse, circle, core, label, type);
+    const activateHover = () => {
+      if (state.lockedNode) return;
+      state.hoveredNode = node.id;
+      drawMap();
+    };
+    const clearHover = () => {
+      if (state.lockedNode) return;
+      state.hoveredNode = null;
+      drawMap();
+    };
+    group.addEventListener("pointerenter", activateHover);
+    group.addEventListener("mouseenter", activateHover);
+    group.addEventListener("pointerleave", clearHover);
+    group.addEventListener("mouseleave", clearHover);
     group.addEventListener("click", (event) => {
       event.stopPropagation();
       selectNode(node.id);
@@ -736,6 +752,7 @@ function drawMap() {
 function selectNode(nodeId) {
   state.lockedNode = state.lockedNode === nodeId ? null : nodeId;
   state.selectedNode = state.lockedNode;
+  state.hoveredNode = null;
   render();
 }
 
@@ -743,6 +760,7 @@ function resetMapView() {
   state.mapTransform = { x: 0, y: 0, scale: 1 };
   state.lockedNode = null;
   state.selectedNode = null;
+  state.hoveredNode = null;
   render();
 }
 
