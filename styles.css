@@ -1559,35 +1559,40 @@ body {
 }
 
 .lane-band {
-  fill: rgba(66, 243, 223, 0.035);
-  stroke: rgba(66, 243, 223, 0.1);
+  fill: rgba(66, 243, 223, 0.055);
+  stroke: rgba(66, 243, 223, 0.22);
   stroke-dasharray: 4 8;
 }
 
 .lane-label {
-  fill: rgba(232, 255, 250, 0.72);
-  font-size: 13px;
+  fill: #effffb;
+  font-size: 14px;
+  font-weight: 900;
   letter-spacing: 0;
+  paint-order: stroke;
+  stroke: rgba(3, 17, 20, 0.95);
+  stroke-width: 4px;
+  stroke-linejoin: round;
 }
 
 .link {
-  stroke: rgba(132, 239, 226, 0.25);
-  stroke-width: 2;
-  filter: drop-shadow(0 0 8px rgba(66, 243, 223, 0.18));
+  stroke: rgba(170, 255, 244, 0.46);
+  stroke-width: 2.4;
+  filter: drop-shadow(0 0 10px rgba(66, 243, 223, 0.26));
 }
 
 #arrowPulse path {
-  fill: rgba(66, 243, 223, 0.68);
+  fill: rgba(180, 255, 244, 0.92);
 }
 
 .link.is-related {
-  stroke: var(--cyan);
-  stroke-width: 3.2;
-  filter: drop-shadow(0 0 12px rgba(66, 243, 223, 0.56));
+  stroke: #9efff0;
+  stroke-width: 4;
+  filter: drop-shadow(0 0 16px rgba(66, 243, 223, 0.72));
 }
 
 .link.is-muted {
-  opacity: 0.14;
+  opacity: 0.26;
 }
 
 .node-button {
@@ -1595,7 +1600,7 @@ body {
 }
 
 .node-button .node-halo {
-  opacity: 0.16;
+  opacity: 0.26;
 }
 
 .node-button .node-pulse {
@@ -1607,77 +1612,41 @@ body {
 
 .node-button circle:not(.node-pulse):not(.node-halo):not(.node-core) {
   stroke: rgba(232, 255, 250, 0.82);
-  stroke-width: 3px;
+  stroke-width: 4px;
+  filter: brightness(1.14) saturate(1.18);
 }
 
 .node-button .node-core {
-  fill: rgba(255, 255, 255, 0.86);
+  fill: rgba(255, 255, 255, 0.94);
+  stroke: rgba(2, 12, 14, 0.36);
+  stroke-width: 2px;
 }
 
-.node-button.is-hovered .node-pulse,
 .node-button.is-selected .node-pulse {
   opacity: 1;
   animation: nodePulse 1.7s ease-out infinite;
 }
 
-.node-button.is-hovered circle:not(.node-pulse):not(.node-halo):not(.node-core),
 .node-button.is-selected circle:not(.node-pulse):not(.node-halo):not(.node-core) {
-  stroke: var(--cyan);
-  stroke-width: 5px;
+  stroke: #ffffff;
+  stroke-width: 6px;
+  filter: drop-shadow(0 0 16px rgba(66, 243, 223, 0.85));
 }
 
 .node-button.is-unrelated,
 .node-button.is-dimmed {
-  opacity: 0.24;
+  opacity: 0.42;
 }
 
 .node-button text {
-  font-size: 13px;
-  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.52);
-}
-
-.node-tooltip {
-  position: absolute;
-  z-index: 5;
-  width: min(300px, calc(100% - 28px));
-  padding: 14px;
-  border: 1px solid rgba(66, 243, 223, 0.28);
-  border-radius: 8px;
-  color: #effffb;
-  background: rgba(3, 17, 20, 0.92);
-  box-shadow: 0 18px 52px rgba(0, 0, 0, 0.36), 0 0 28px rgba(66, 243, 223, 0.14);
-  opacity: 0;
-  pointer-events: none;
-  transform: translateY(4px);
-  transition: opacity 0.14s ease, transform 0.14s ease;
-  backdrop-filter: blur(18px);
-}
-
-.node-tooltip.is-visible {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.node-tooltip span {
-  display: block;
-  margin-bottom: 8px;
-  color: var(--cyan);
-  font-size: 12px;
-  font-weight: 900;
-}
-
-.node-tooltip strong {
-  display: block;
-  margin-bottom: 8px;
+  fill: #ffffff;
   font-size: 14px;
-  line-height: 1.45;
-}
-
-.node-tooltip p {
-  margin-bottom: 0;
-  color: rgba(232, 255, 250, 0.72);
-  font-size: 13px;
-  line-height: 1.55;
+  font-weight: 900;
+  paint-order: stroke;
+  stroke: rgba(2, 12, 14, 0.88);
+  stroke-width: 4px;
+  stroke-linejoin: round;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.76);
 }
 
 @keyframes nodePulse {
@@ -1812,14 +1781,6 @@ body {
     right: auto;
   }
 
-  .node-tooltip {
-    position: absolute;
-    left: 14px !important;
-    right: 14px;
-    bottom: 14px;
-    top: auto !important;
-    width: auto;
-  }
 }
 
 @media (max-width: 620px) {

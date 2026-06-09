@@ -586,7 +586,6 @@ const state = {
   query: "",
   selectedNode: null,
   lockedNode: null,
-  hoveredNode: null,
   mapTransform: { x: 0, y: 0, scale: 1 },
   isPanning: false,
   didPan: false,
@@ -623,45 +622,11 @@ function isRelatedLink(link, nodeId) {
   return nodeId && (link[0] === nodeId || link[1] === nodeId);
 }
 
-function getNodeStats(nodeId) {
-  const nodeNeeds = matchmakingNeeds.filter((need) => need.node === nodeId);
-  return {
-    companies: companies.filter((company) => company.node === nodeId).length,
-    resources: resources.filter((resource) => resource.node === nodeId).length,
-    needs: nodeNeeds.length,
-    summary: nodeNeeds[0]?.question || "该节点正在等待更多企业能力、真实场景和政策资源补充。",
-  };
-}
-
 function setMapTransform() {
   const viewport = $("#mapViewport");
   if (!viewport) return;
   const { x, y, scale } = state.mapTransform;
   viewport.setAttribute("transform", `translate(${x} ${y}) scale(${scale})`);
-}
-
-function showNodeTooltip(node, event) {
-  const tooltip = $("#nodeTooltip");
-  const stage = $(".map-stage");
-  if (!tooltip || !stage) return;
-  const stats = getNodeStats(node.id);
-  const bounds = stage.getBoundingClientRect();
-  const left = Math.min(Math.max(event.clientX - bounds.left + 18, 14), bounds.width - 300);
-  const top = Math.min(Math.max(event.clientY - bounds.top + 18, 54), bounds.height - 180);
-
-  tooltip.innerHTML = `
-    <span>${node.type} / ${node.name}</span>
-    <strong>${stats.companies} 个能力样例 · ${stats.resources} 个资源入口 · ${stats.needs} 条合作需求</strong>
-    <p>${stats.summary}</p>
-  `;
-  tooltip.style.left = `${left}px`;
-  tooltip.style.top = `${top}px`;
-  tooltip.classList.add("is-visible");
-}
-
-function hideNodeTooltip() {
-  const tooltip = $("#nodeTooltip");
-  if (tooltip) tooltip.classList.remove("is-visible");
 }
 
 function clampScale(scale) {
@@ -677,7 +642,7 @@ function drawMap() {
   nodeLayer.innerHTML = "";
   setMapTransform();
 
-  const activeNode = state.lockedNode || state.hoveredNode;
+  const activeNode = state.lockedNode;
   const relatedNodes = getRelatedNodeIds(activeNode);
 
   [
@@ -727,11 +692,10 @@ function drawMap() {
 
     const visibleByStage = state.filter === "all" || node.stage === state.filter;
     const selected = state.selectedNode === node.id;
-    const hovered = state.hoveredNode === node.id;
     const unrelated = activeNode && !relatedNodes.has(node.id);
     group.setAttribute(
       "class",
-      `node-button${visibleByStage ? "" : " is-dimmed"}${selected ? " is-selected" : ""}${hovered ? " is-hovered" : ""}${unrelated ? " is-unrelated" : ""}`,
+      `node-button${visibleByStage ? "" : " is-dimmed"}${selected ? " is-selected" : ""}${unrelated ? " is-unrelated" : ""}`,
     );
     group.setAttribute("tabindex", "0");
     group.setAttribute("role", "button");
@@ -755,17 +719,6 @@ function drawMap() {
     type.textContent = node.type;
 
     group.append(halo, pulse, circle, core, label, type);
-    group.addEventListener("pointerenter", (event) => {
-      state.hoveredNode = node.id;
-      showNodeTooltip(node, event);
-      drawMap();
-    });
-    group.addEventListener("pointermove", (event) => showNodeTooltip(node, event));
-    group.addEventListener("pointerleave", () => {
-      state.hoveredNode = null;
-      hideNodeTooltip();
-      drawMap();
-    });
     group.addEventListener("click", (event) => {
       event.stopPropagation();
       selectNode(node.id);
@@ -790,8 +743,6 @@ function resetMapView() {
   state.mapTransform = { x: 0, y: 0, scale: 1 };
   state.lockedNode = null;
   state.selectedNode = null;
-  state.hoveredNode = null;
-  hideNodeTooltip();
   render();
 }
 
