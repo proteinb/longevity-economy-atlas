@@ -314,7 +314,7 @@ const resources = [
   {
     kind: "初始研报",
     title: "全球长寿经济市场分析与三家高成长企业",
-    summary: "集中说明全球长寿经济市场、评分模型、三家高成长企业和每日研报机制。",
+    summary: "集中说明全球长寿经济市场、观察维度、三家高成长企业和公开信息监测框架。",
     node: "ai-data",
     stage: "support",
     url: "./全球长寿经济市场分析与三家高成长企业.md",
@@ -587,6 +587,7 @@ const state = {
   selectedNode: null,
   lockedNode: null,
   hoveredNode: null,
+  shouldFocusResults: false,
   mapTransform: { x: 0, y: 0, scale: 1 },
   isPanning: false,
   didPan: false,
@@ -607,6 +608,41 @@ function matchesFilters(item) {
   const stageMatch = state.filter === "all" || item.stage === state.filter;
   const nodeMatch = !state.selectedNode || item.node === state.selectedNode;
   return stageMatch && nodeMatch && includesQuery(item);
+}
+
+function getFilteredCollections() {
+  return {
+    companies: companies.filter(matchesFilters),
+    resources: resources.filter(matchesFilters),
+    needs: matchmakingNeeds.filter(matchesFilters),
+  };
+}
+
+function hasActiveFilter() {
+  return Boolean(state.query || state.selectedNode || state.filter !== "all");
+}
+
+function getResourceActionLabel(resource) {
+  if (resource.kind.includes("官网")) return "访问官网";
+  if (resource.kind.includes("政策") || resource.kind.includes("计划") || resource.kind.includes("方案")) return "查看政策";
+  if (resource.kind.includes("研报")) return "查看报告";
+  if (resource.kind.includes("数据")) return "查看数据";
+  if (resource.kind.includes("资讯") || resource.kind.includes("AI4Science")) return "查看资讯";
+  return resource.url.startsWith("http") ? "查看来源" : "查看说明";
+}
+
+function getResultSectionId() {
+  const filtered = getFilteredCollections();
+  if (filtered.companies.length) return "directory";
+  if (filtered.resources.length) return "resources";
+  if (filtered.needs.length) return "matchmaking";
+  return "directory";
+}
+
+function focusResultSection() {
+  const target = document.getElementById(getResultSectionId());
+  if (!target) return;
+  window.setTimeout(() => target.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
 }
 
 function getRelatedNodeIds(nodeId) {
@@ -753,6 +789,7 @@ function selectNode(nodeId) {
   state.lockedNode = state.lockedNode === nodeId ? null : nodeId;
   state.selectedNode = state.lockedNode;
   state.hoveredNode = null;
+  state.shouldFocusResults = Boolean(state.selectedNode);
   render();
 }
 
@@ -761,6 +798,7 @@ function resetMapView() {
   state.lockedNode = null;
   state.selectedNode = null;
   state.hoveredNode = null;
+  state.shouldFocusResults = false;
   render();
 }
 
@@ -772,12 +810,13 @@ function zoomMap(multiplier) {
 
 function renderCompanies() {
   const grid = $("#companyGrid");
-  const filtered = companies.filter(matchesFilters);
+  const filtered = getFilteredCollections().companies;
+  const highlight = hasActiveFilter();
   grid.innerHTML = filtered.length
     ? filtered
         .map(
           (company) => `
-            <article class="company-card">
+            <article class="company-card${highlight ? " is-result" : ""}" data-node="${company.node}">
               <div>
                 <h3>${company.name}</h3>
                 <p>${company.need}</p>
@@ -799,18 +838,19 @@ function renderCompanies() {
 
 function renderResources() {
   const list = $("#resourceList");
-  const filtered = resources.filter(matchesFilters);
+  const filtered = getFilteredCollections().resources;
+  const highlight = hasActiveFilter();
   list.innerHTML = filtered.length
     ? filtered
         .map(
           (resource) => `
-            <article class="resource-row">
+            <article class="resource-row${highlight ? " is-result" : ""}" data-node="${resource.node}">
               <div class="resource-kind">${resource.kind}</div>
               <div>
                 <h3>${resource.title}</h3>
                 <p>${resource.summary}</p>
               </div>
-              <a href="${resource.url}" target="${resource.url.startsWith("http") ? "_blank" : "_self"}" rel="noreferrer">打开</a>
+              <a href="${resource.url}" target="${resource.url.startsWith("http") ? "_blank" : "_self"}" rel="noreferrer">${getResourceActionLabel(resource)}</a>
             </article>
           `,
         )
@@ -835,7 +875,7 @@ function renderWatchlists() {
                         <span class="ticker">${company.ticker}</span>
                         <h4>${company.name}</h4>
                       </div>
-                      <div class="score" aria-label="成长性评分 ${company.score} 分">${company.score}</div>
+                      <div class="score" aria-label="关注度 ${company.score} 分">${company.score}</div>
                     </div>
                     <p class="focus">${company.focus}</p>
                     <p>${company.thesis}</p>
@@ -880,12 +920,13 @@ function renderDailyReportTemplate() {
 
 function renderMatchmakingNeeds() {
   const grid = $("#needGrid");
-  const filtered = matchmakingNeeds.filter(matchesFilters);
+  const filtered = getFilteredCollections().needs;
+  const highlight = hasActiveFilter();
   grid.innerHTML = filtered.length
     ? filtered
         .map(
           (need) => `
-            <article class="need-card">
+            <article class="need-card${highlight ? " is-result" : ""}" data-node="${need.node}">
               <div class="need-card-top">
                 <span>${stageLabels[need.stage]}</span>
                 <strong>${nodes.find((node) => node.id === need.node).name}</strong>
@@ -997,9 +1038,26 @@ function renderRegionalClusters() {
 }
 
 function renderStats() {
+  const filtered = getFilteredCollections();
   $("#nodeCount").textContent = nodes.length;
-  $("#companyCount").textContent = companies.filter(matchesFilters).length;
-  $("#resourceCount").textContent = resources.filter(matchesFilters).length;
+  $("#companyCount").textContent = filtered.companies.length;
+  $("#resourceCount").textContent = filtered.resources.length;
+}
+
+function renderFilterSummary() {
+  const summary = $("#filterSummary");
+  if (!summary) return;
+  const filtered = getFilteredCollections();
+  const nodeName = state.selectedNode ? nodes.find((node) => node.id === state.selectedNode)?.name : "";
+  const filters = [
+    state.query ? `关键词“${state.query}”` : "",
+    nodeName ? `节点“${nodeName}”` : "",
+    state.filter !== "all" ? `环节“${stageLabels[state.filter]}”` : "",
+  ].filter(Boolean);
+  summary.innerHTML = `
+    <strong>${filters.length ? filters.join(" + ") : "全部数据"}</strong>
+    <span>当前筛选到 ${filtered.companies.length} 个能力样例、${filtered.resources.length} 个资源入口、${filtered.needs.length} 个合作需求。</span>
+  `;
 }
 
 function render() {
@@ -1011,11 +1069,17 @@ function render() {
   renderCompanies();
   renderResources();
   renderStats();
+  renderFilterSummary();
+  if (state.shouldFocusResults) {
+    state.shouldFocusResults = false;
+    focusResultSection();
+  }
 }
 
 function bindEvents() {
   $("#searchInput").addEventListener("input", (event) => {
     state.query = event.target.value.trim();
+    state.shouldFocusResults = Boolean(state.query);
     render();
   });
 
@@ -1024,6 +1088,7 @@ function bindEvents() {
       state.filter = button.dataset.filter;
       state.lockedNode = null;
       state.selectedNode = null;
+      state.shouldFocusResults = true;
       $$(".segment").forEach((item) => item.classList.toggle("is-active", item === button));
       render();
     });
@@ -1074,6 +1139,7 @@ function bindEvents() {
     if (event.target.classList.contains("map-hitbox")) {
       state.lockedNode = null;
       state.selectedNode = null;
+      state.shouldFocusResults = false;
       render();
     }
   });
@@ -1090,6 +1156,16 @@ function bindEvents() {
   $("#zoomOut").addEventListener("click", () => zoomMap(0.88));
   $("#zoomIn").addEventListener("click", () => zoomMap(1.12));
   $("#zoomReset").addEventListener("click", resetMapView);
+
+  const backToTop = $("#backToTop");
+  if (backToTop) {
+    const syncBackToTop = () => {
+      backToTop.classList.toggle("is-visible", window.scrollY > 720);
+    };
+    window.addEventListener("scroll", syncBackToTop, { passive: true });
+    backToTop.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
+    syncBackToTop();
+  }
 }
 
 bindEvents();

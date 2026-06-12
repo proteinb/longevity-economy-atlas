@@ -24,8 +24,8 @@
         <a href="#map">图谱</a>
         <a href="#clusters">产业聚集地</a>
         <a href="#matchmaking">合作需求</a>
-        <a href="#watchlist">双榜单</a>
-        <a href="#daily-report">日报</a>
+        <a href="#watchlist">观察清单</a>
+        <a href="#daily-report">监测模板</a>
         <a href="#directory">企业目录</a>
         <a href="#resources">资源</a>
         <a href="#contribute">共建</a>
@@ -94,11 +94,12 @@
             <button class="segment" type="button" data-filter="support">支撑</button>
           </fieldset>
         </div>
+        <div id="filterSummary" class="filter-summary" aria-live="polite"></div>
 
         <section class="value-strip" aria-label="长寿经济的共建价值">
           <article>
-            <span>给程序员</span>
-            <p>把“我能不能活得足够久”翻译成可以参与的技术、数据、产品和开源问题。</p>
+            <span>给技术团队 / 数据共建者</span>
+            <p>把产业判断整理成可追溯的数据结构、来源链接和可继续补证据的问题。</p>
           </article>
           <article>
             <span>给企业</span>
@@ -121,8 +122,8 @@
           </div>
           <div class="path-grid">
             <a href="#watchlist" class="path-card">
-              <span>技术与开源</span>
-              <strong>把延寿焦虑变成可维护的数据、工具和监测系统。</strong>
+              <span>技术与数据共建</span>
+              <strong>把产业线索变成可维护、可审阅、可扩展的开源数据。</strong>
             </a>
             <a href="#clusters" class="path-card">
               <span>企业合作</span>
@@ -144,7 +145,7 @@
             <p class="section-kicker">产业图谱</p>
             <h2 id="map-title">从“活得更久”到“活得更好”的供需网络</h2>
             <p>
-              主图谱把长寿经济拆成上游研发、中游药械与数字产品、下游医疗康养服务、支撑平台生态 16 个节点。点击节点可以筛选企业能力与政策资源，快速定位“健康寿命延长”的合作方向。
+              主图谱把长寿经济拆成上游研发、中游药械与数字产品、下游医疗康养服务、支撑平台生态 16 个节点。点击节点会筛选下方企业能力、合作需求和资源入口，帮助你快速定位对应方向。
             </p>
             <div class="metrics" aria-label="图谱统计">
               <div><strong id="nodeCount">0</strong><span>产业节点</span></div>
@@ -219,11 +220,11 @@
         <div class="section-heading">
           <div>
             <p class="section-kicker">Watchlist</p>
-            <h2 id="watchlist-title">全球 + 中国长寿经济双榜单</h2>
+            <h2 id="watchlist-title">全球 + 中国长寿经济观察清单</h2>
           </div>
-          <p>榜单按业务相关性、成长性、护城河、市场空间和每日可跟踪性评分，优先选择有明确催化、公开资料可验证的企业。</p>
+          <p>当前是研究原型中的关注样本，不是完整排名。样本按业务相关性、成长性、护城河、市场空间和可跟踪性观察，后续扩容后再细化评分方法。</p>
         </div>
-        <div class="score-model" aria-label="评分模型">
+        <div class="score-model" aria-label="观察维度">
           <span>业务相关性 25</span>
           <span>成长性 25</span>
           <span>护城河 20</span>
@@ -295,7 +296,7 @@
             <span class="signal-index">04</span>
             <p class="signal-role">补充：抗衰生命科学与投融资雷达</p>
             <h3>Longevity.Technology</h3>
-            <p>Longevity.Technology 聚焦长寿生物医药、抗衰技术、细胞再生、商业化和资本事件，可补足双榜单中前沿科技与投融资跟踪视角。</p>
+            <p>Longevity.Technology 聚焦长寿生物医药、抗衰技术、细胞再生、商业化和资本事件，可补足观察清单中前沿科技与投融资跟踪视角。</p>
             <div class="signal-tags">
               <span>生物技术</span>
               <span>投融资</span>
@@ -312,9 +313,9 @@
         <div class="section-heading">
           <div>
             <p class="section-kicker">Daily brief</p>
-            <h2 id="daily-report-title">每日研报监测模板</h2>
+            <h2 id="daily-report-title">日报模板示例 / 监测框架</h2>
           </div>
-          <p>每天北京时间早上 8:00 跟踪 6 家企业的新闻、公告、融资、临床、合作、股价和风险变化，输出中文研究简报。</p>
+          <p>这里先沉淀一套可复用的公开信息监测框架，并不表示当前已经每日运营。真正开始更新后，应补充最新一期、更新时间和历史存档。</p>
         </div>
         <div id="dailyReportList" class="daily-report-list"></div>
       </section>
@@ -339,6 +340,28 @@
           <p>优先放置公开、可验证、能支撑长寿经济产业链判断的政策、报告、园区资讯和研究材料。</p>
         </div>
         <div id="resourceList" class="resource-list" aria-live="polite"></div>
+      </section>
+
+      <section class="content-band glossary-band" id="glossary" aria-labelledby="glossary-title">
+        <div class="section-heading">
+          <div>
+            <p class="section-kicker">Glossary</p>
+            <h2 id="glossary-title">术语速查</h2>
+          </div>
+          <p>这些缩写是产业研究中的常见表达，先给出工作定义，后续可以继续补充更完整的术语表。</p>
+        </div>
+        <div class="glossary-grid">
+          <article><span>CGT</span><p>细胞与基因治疗，常用于难治性疾病、再生医学和长期随访场景。</p></article>
+          <article><span>IVD</span><p>体外诊断，包括分子诊断、伴随诊断、早筛检测和慢病筛查。</p></article>
+          <article><span>CXO</span><p>CRO、CDMO 等研发和生产外包服务能力，支撑药械从研发走向产业化。</p></article>
+          <article><span>BD</span><p>商务拓展，常指授权合作、出海交易、联合开发或渠道合作。</p></article>
+          <article><span>IND</span><p>新药临床试验申请，表示产品进入人体临床前的重要监管节点。</p></article>
+          <article><span>AI+BT</span><p>人工智能与生物技术结合，如 AI 制药、生物大模型、蛋白设计和实验自动化。</p></article>
+          <article><span>5511</span><p>苏州工业园区企业培育相关政策工具，具体口径以官方文件为准。</p></article>
+          <article><span>苏惠保</span><p>苏州地区普惠型商业补充医疗保险，是观察创新药械支付转化的地方样本。</p></article>
+          <article><span>名优目录</span><p>地方创新产品推广目录，常用于帮助创新药械进入采购、推广和应用场景。</p></article>
+          <article><span>BioBAY</span><p>苏州生物医药产业园，是本网站第一个地域产业聚集地标杆样本。</p></article>
+        </div>
       </section>
 
       <section class="content-band trust-band" id="evidence" aria-labelledby="evidence-title">
@@ -395,6 +418,9 @@
           <p>
             后续建议补充企业名录、产品能力、适应症或应用场景、研发阶段、注册上市进展、合作需求、政策链接、临床与康养场景，以及不同城市/园区的产业聚集地案例。每条记录保留来源链接和更新时间，方便审阅。
           </p>
+          <p class="contribute-hint">
+            不会使用 GitHub 也没关系，可以先按下方三类模板准备企业、园区或产品信息，后续再由共建者整理成结构化记录。
+          </p>
         </div>
         <div class="contribute-actions">
           <a class="primary-action" href="./苏州BioBAY长寿经济产业图谱.md">查看 BioBAY 案例</a>
@@ -448,6 +474,8 @@
       <span>长寿经济产业图谱</span>
       <span>开源调研原型 · 可持续补充企业、政策与地域集群数据</span>
     </footer>
+
+    <button id="backToTop" class="back-to-top" type="button" aria-label="回到顶部">↑</button>
 
     <script src="./app.js"></script>
   </body>
