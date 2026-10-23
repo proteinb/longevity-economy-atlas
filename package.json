@@ -6,7 +6,9 @@
   "type": "module",
   "scripts": {
     "validate": "node scripts/validate-static-site.mjs",
-    "check:js": "node --check app.js"
+    "check:js": "node --check app.js",
+    "build": "python3 scripts/build-model.py && node scripts/validate-static-site.mjs && node scripts/verify-preview.mjs",
+    "verify:preview": "node scripts/verify-preview.mjs"
   },
   "license": "MIT"
 }

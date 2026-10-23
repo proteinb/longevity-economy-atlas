@@ -4,6 +4,9 @@ import { spawnSync } from "node:child_process";
 
 const requiredFiles = [
   "index.html",
+  "atlas.html",
+  "care-bed.html",
+  "editorial.css",
   "styles.css",
   "app.js",
   "README.md",
@@ -20,15 +23,14 @@ const requiredFiles = [
 ];
 
 const contentChecks = [
-  ["index.html", "长寿经济产业链与地域集群图谱"],
-  ["index.html", "首个标杆案例：苏州 BioBAY"],
-  ["index.html", "合作需求雷达"],
-  ["index.html", "让每条产业判断都能被追问"],
-  ["index.html", "三类最值得补充的数据"],
-  ["index.html", "https://github.com/proteinb/longevity-economy-atlas"],
+  ["atlas.html", "看懂长寿经济的每一条连接"],
+  ["atlas.html", "节点详情"],
+  ["atlas.html", "产业聚集地"],
+  ["atlas.html", "能力样例"],
+  ["atlas.html", "证据边界"],
   ["app.js", 'status: "标杆案例"'],
-  ["app.js", "const matchmakingNeeds"],
-  ["app.js", "renderMatchmakingNeeds"],
+  ["app.js", "renderNodeInspector"],
+  ["app.js", "getRelatedNodeIds"],
   ["README.md", "数据状态与更新节奏"],
   ["README.md", "npm run validate"],
   ["README.md", "CONTRIBUTING.md"],
@@ -70,4 +72,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log("长寿经济产业图谱自检通过：核心页面、BioBAY、合作需求、证据模型、贡献模板和 JS 语法均正常。");
+console.log("长寿经济产业图谱自检通过：轻量交互页面、BioBAY、证据边界、贡献模板和 JS 语法均正常。");

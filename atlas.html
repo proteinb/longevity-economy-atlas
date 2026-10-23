@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>长寿经济产业图谱</title>
+    <meta
+      name="description"
+      content="一个更轻量、更具交互感的长寿经济产业图谱原型，聚焦产业链节点、地域集群和证据边界。"
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23080914'/%3E%3Ccircle cx='32' cy='32' r='18' fill='none' stroke='%2350f4ff' stroke-width='5'/%3E%3Ccircle cx='32' cy='32' r='5' fill='%23b6ff8f'/%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="./atlas.css" />
+  </head>
+  <body>
+<a href="./index.html" style="position:relative;z-index:20;display:block;padding:14px 5%;background:#f5f3ec;color:#284f43;font:14px sans-serif">← AgingBuy 产品图鉴</a>
+    <header class="topbar">
+      <a class="brand" href="#top" aria-label="长寿经济产业图谱首页">
+        <span class="brand-mark">L</span>
+        <span>长寿经济产业图谱</span>
+      </a>
+      <nav class="nav" aria-label="主要导航">
+        <a href="#map">图谱</a>
+        <a href="#clusters">产业聚集地</a>
+        <a href="#directory">能力样例</a>
+        <a href="#glossary">术语</a>
+        <a href="#evidence">边界</a>
+      </nav>
+    </header>
+
+    <main id="top">
+      <section class="workspace motion-hero" aria-labelledby="page-title">
+        <div class="bio-grid-bg" aria-hidden="true"></div>
+        <div class="protein-ribbon" aria-hidden="true">
+          <span></span>
+          <span></span>
+          <span></span>
+          <span></span>
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+        <div class="bio-orbit-field" aria-hidden="true">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+        <div class="cover-visual" aria-hidden="true">
+          <div class="cover-specimen">
+            <span class="specimen-core"></span>
+            <span class="specimen-ring ring-a"></span>
+            <span class="specimen-ring ring-b"></span>
+            <span class="specimen-ring ring-c"></span>
+            <span class="specimen-node node-a"></span>
+            <span class="specimen-node node-b"></span>
+            <span class="specimen-node node-c"></span>
+            <span class="specimen-node node-d"></span>
+          </div>
+          <div class="cover-beam beam-a"></div>
+          <div class="cover-beam beam-b"></div>
+          <div class="cover-caption">
+            <span>Interactive atlas</span>
+            <strong>Healthspan Network</strong>
+          </div>
+        </div>
+
+        <div class="workspace-header">
+          <div>
+            <p class="eyebrow">Motion longevity atlas</p>
+            <h1 id="page-title">看懂长寿经济的每一条连接</h1>
+            <div class="mission-strip" aria-label="图谱运行状态">
+              <span>16 nodes</span>
+              <span>drag / zoom / highlight</span>
+              <span>BioBAY benchmark</span>
+            </div>
+          </div>
+          <div class="source-note">
+            <span>当前版本</span>
+            <strong>轻量交互原型：产业节点 + 地域集群 + 证据边界</strong>
+          </div>
+        </div>
+
+        <div class="query-panel" aria-label="查询控件">
+          <label class="search-box">
+            <span>搜索图谱</span>
+            <input
+              id="searchInput"
+              type="search"
+              placeholder="例如：AI制药、IVD、康复辅具、支付保险"
+              autocomplete="off"
+            />
+          </label>
+
+          <fieldset class="segments" aria-label="产业环节">
+            <legend>产业环节</legend>
+            <button class="segment is-active" type="button" data-filter="all">全部</button>
+            <button class="segment" type="button" data-filter="upstream">上游</button>
+            <button class="segment" type="button" data-filter="midstream">中游</button>
+            <button class="segment" type="button" data-filter="downstream">下游</button>
+            <button class="segment" type="button" data-filter="support">支撑</button>
+          </fieldset>
+        </div>
+        <div id="filterSummary" class="filter-summary" aria-live="polite"></div>
+
+        <section class="map-layout" id="map" aria-labelledby="map-title">
+          <div class="map-copy">
+            <p class="section-kicker">Interactive map</p>
+            <h2 id="map-title">产业链节点图谱</h2>
+            <p>
+              拖动探索，滚轮缩放。选择节点，查看关联与能力样例。
+            </p>
+            <div class="metrics" aria-label="图谱统计">
+              <div><strong id="nodeCount">0</strong><span>产业节点</span></div>
+              <div><strong id="companyCount">0</strong><span>能力样例</span></div>
+              <div><strong id="clusterCount">0</strong><span>地域样本</span></div>
+            </div>
+          </div>
+          <div class="map-stage" aria-label="长寿经济产业链可视化图谱">
+            <div class="map-toolbar" aria-label="图谱视图控制">
+              <button id="zoomOut" type="button" aria-label="缩小图谱">−</button>
+              <button id="zoomReset" type="button">重置视图</button>
+              <button id="zoomIn" type="button" aria-label="放大图谱">+</button>
+            </div>
+            <svg id="industryMap" viewBox="0 0 880 560" role="img" aria-labelledby="mapSvgTitle">
+              <title id="mapSvgTitle">长寿经济产业链节点关系图</title>
+              <defs>
+                <filter id="nodeGlow" x="-80%" y="-80%" width="260%" height="260%">
+                  <feGaussianBlur stdDeviation="7" result="blur" />
+                  <feColorMatrix
+                    in="blur"
+                    type="matrix"
+                    values="0 0 0 0 0.19 0 0 0 0 0.92 0 0 0 0 0.82 0 0 0 0.95 0"
+                    result="glow"
+                  />
+                  <feMerge>
+                    <feMergeNode in="glow" />
+                    <feMergeNode in="SourceGraphic" />
+                  </feMerge>
+                </filter>
+                <marker id="arrowPulse" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+                  <path d="M 0 0 L 10 5 L 0 10 z" />
+                </marker>
+              </defs>
+              <rect class="map-hitbox" width="880" height="560"></rect>
+              <g id="mapViewport">
+                <g id="laneLayer"></g>
+                <g id="linkLayer"></g>
+                <g id="nodeLayer"></g>
+              </g>
+            </svg>
+          </div>
+        </section>
+
+        <section class="node-inspector" aria-labelledby="node-inspector-title">
+          <div>
+            <p class="section-kicker">Node inspector</p>
+            <h2 id="node-inspector-title">节点详情</h2>
+          </div>
+          <div id="nodeInspector" class="node-inspector-panel" aria-live="polite"></div>
+        </section>
+      </section>
+
+      <section class="content-band cluster-band" id="clusters" aria-labelledby="clusters-title">
+        <div class="section-heading">
+          <div>
+            <p class="section-kicker">Regional clusters</p>
+            <h2 id="clusters-title">产业聚集地</h2>
+          </div>
+          <p>保留 BioBAY 作为第一个标杆样本，其他地区先保持观察状态，避免把未验证内容写成完整案例。</p>
+        </div>
+        <div id="clusterGrid" class="cluster-grid" aria-live="polite"></div>
+      </section>
+
+      <section class="content-band" id="directory" aria-labelledby="directory-title">
+        <div class="section-heading">
+          <div>
+            <p class="section-kicker">Capability samples</p>
+            <h2 id="directory-title">能力样例</h2>
+          </div>
+          <p>只保留一组能力样例，用来解释每个产业节点能承接什么样的技术、产品或场景。</p>
+        </div>
+        <div id="companyGrid" class="item-grid" aria-live="polite"></div>
+      </section>
+
+      <section class="content-band glossary-band" id="glossary" aria-labelledby="glossary-title">
+        <div class="section-heading">
+          <div>
+            <p class="section-kicker">Glossary</p>
+            <h2 id="glossary-title">术语速查</h2>
+          </div>
+          <p>保留必要缩写解释，降低产业图谱的阅读门槛。</p>
+        </div>
+        <div class="glossary-grid">
+          <article><span>CGT</span><p>细胞与基因治疗，常用于难治性疾病、再生医学和长期随访场景。</p></article>
+          <article><span>IVD</span><p>体外诊断，包括分子诊断、伴随诊断、早筛检测和慢病筛查。</p></article>
+          <article><span>CXO</span><p>CRO、CDMO 等研发和生产外包服务能力，支撑药械从研发走向产业化。</p></article>
+          <article><span>AI+BT</span><p>人工智能与生物技术结合，如 AI 制药、生物大模型、蛋白设计和实验自动化。</p></article>
+          <article><span>苏惠保</span><p>苏州地区普惠型商业补充医疗保险，是观察创新药械支付转化的地方样本。</p></article>
+          <article><span>BioBAY</span><p>苏州生物医药产业园，是本网站第一个地域产业聚集地标杆样本。</p></article>
+        </div>
+      </section>
+
+      <section class="content-band trust-band" id="evidence" aria-labelledby="evidence-title">
+        <div class="section-heading">
+          <div>
+            <p class="section-kicker">Boundary</p>
+            <h2 id="evidence-title">证据边界</h2>
+          </div>
+          <p>这个网站目前是产业研究原型，不是官方招商平台、企业排名、投资建议或医疗建议。</p>
+        </div>
+        <div class="trust-grid compact-trust-grid">
+          <article>
+            <span>事实层</span>
+            <strong>官方介绍、政策文件、企业公告、上市产品、融资和临床进展。</strong>
+            <p>用于证明主体、产品、政策或交易确实存在。</p>
+          </article>
+          <article>
+            <span>连接层</span>
+            <strong>把企业能力映射到早筛、治疗、康复、照护、支付和出海链路。</strong>
+            <p>用于解释它为什么属于长寿经济，并保留判断边界。</p>
+          </article>
+          <article>
+            <span>验证层</span>
+            <strong>其他城市园区、采购清单、支付效果和真实世界数据仍需补证据。</strong>
+            <p>不伪造联系方式、日报、完整采购清单或未经验证的区域案例。</p>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <span>长寿经济产业图谱</span>
+      <span>轻量交互原型 · 产业节点、地域集群与证据边界</span>
+    </footer>
+
+    <button id="backToTop" class="back-to-top" type="button" aria-label="回到顶部">↑</button>
+
+    <script src="./app.js"></script>
+  </body>
+</html>

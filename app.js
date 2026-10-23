@@ -321,173 +321,6 @@ const resources = [
   },
 ];
 
-const watchlists = [
-  {
-    group: "全球长寿科技企业",
-    companies: [
-      {
-        name: "Insilico Medicine",
-        ticker: "3696.HK",
-        focus: "AI 药物发现 / 健康寿命平台",
-        score: 91,
-        thesis:
-          "2025 年底港股上市，2026 年与 Eli Lilly 签署最高 27.5 亿美元 AI 药物发现合作，平台商业化验证显著增强。",
-        signals: ["药企 BD", "管线临床进展", "平台收入", "港股公告"],
-        sources: [
-          ["公司 2025 年业绩", "https://insilico.com/news/ohz9ozx0t1-insilico-medicine-announces-2025-annual"],
-          ["Lilly 合作公告", "https://www.hkexnews.hk/listedco/listconews/sehk/2026/0329/2026032900717.pdf"],
-        ],
-      },
-      {
-        name: "Retro Biosciences",
-        ticker: "未上市",
-        focus: "Autophagy / iPSC 血液干细胞 / 细胞重编程",
-        score: 89,
-        thesis:
-          "以延长 10 年健康寿命为目标，RTR242 已进入 Phase I，2026 年融资后估值约 18 亿美元，临床与平台化路线并进。",
-        signals: ["RTR242 临床", "融资", "iPSC 合作", "重编程里程碑"],
-        sources: [
-          ["公司 2026 更新", "https://www.retro.bio/blog/fundraise-2026"],
-          ["STAT 融资报道", "https://www.statnews.com/2026/05/22/retro-biosciences-longevity-valuation/"],
-        ],
-      },
-      {
-        name: "Life Biosciences",
-        ticker: "未上市",
-        focus: "部分表观遗传重编程 / 细胞年轻化",
-        score: 88,
-        thesis:
-          "ER-100 获 FDA IND 放行并启动 Phase I，是首个进入人体临床的表观遗传重编程细胞年轻化疗法之一，2026 年完成 8000 万美元 D 轮融资。",
-        signals: ["ER-100 Phase I", "FDA/ClinicalTrials", "融资", "眼科适应症数据"],
-        sources: [
-          ["IND 放行公告", "https://www.lifebiosciences.com/life-biosciences-announces-fda-clearance-of-ind-application-for-er-100-in-optic-neuropathies/"],
-          ["公司新闻中心", "https://www.lifebiosciences.com/news/"],
-        ],
-      },
-    ],
-  },
-  {
-    group: "中国市场上市企业",
-    companies: [
-      {
-        name: "京东健康",
-        ticker: "06618.HK",
-        focus: "慢病用药 / 在线医疗 / AI 医疗 / 新药首发",
-        score: 90,
-        thesis:
-          "2025 年收入同比增长 26.3%，2026 年 Q1 收入同比增长 17%，平台规模、医药供应链和 AI 医疗工具形成持续跟踪价值。",
-        signals: ["业绩公告", "新药首发", "AI 医疗", "药企合作"],
-        sources: [
-          ["2025 年报摘要", "https://www.itiger.com/news/1151344399"],
-          ["2026 Q1 报道", "https://finance.sina.cn/tech/2026-05-13/detail-inhxtkrp7695472.d.html"],
-        ],
-      },
-      {
-        name: "阿里健康",
-        ticker: "00241.HK",
-        focus: "医药电商 / 创新药服务 / AI 医疗 / 本地化健康服务",
-        score: 86,
-        thesis:
-          "2026 财年收入同比增长 12%，净利润同比增长 35.16%，在医药电商监管趋严后转向创新药、AI 和服务融合。",
-        signals: ["年度业绩", "创新药合作", "AI 医疗", "平台合规"],
-        sources: [
-          ["2026 财年业绩报道", "https://www.nbd.com.cn/articles/2026-05-15/4393429.html"],
-          ["FY2025 摘要", "https://quartr.com/events/alibaba-health-information-technology-limited-241-h2-2025_Fg6a364N"],
-        ],
-      },
-      {
-        name: "可孚医疗",
-        ticker: "301087.SZ",
-        focus: "康复辅具 / 健康监测 / 医疗护理 / 家用医疗器械",
-        score: 84,
-        thesis:
-          "2025 年收入同比增长 13.56%，归母净利润同比增长 19.20%，康复辅具和健康监测直接对应银发经济、居家照护和主动健康管理。",
-        signals: ["年报", "康复辅具", "健康监测", "线下渠道"],
-        sources: [
-          ["2025 年报解读", "https://finance.sina.com.cn/stock/aigc/stockfs/2026-03-11/doc-inhqrfcn2586211.shtml"],
-          ["公司年报全文", "https://cofoe.com.cn/uploads/image/20260323/69c091c9614d6.pdf"],
-        ],
-      },
-    ],
-  },
-];
-
-const dailyReportTemplate = [
-  {
-    title: "今日总览",
-    body: "扫描全球长寿科技、中国银发经济政策、医疗健康资本市场和 6 家企业重大事件。",
-  },
-  {
-    title: "全球 3 家",
-    body: "更新 Insilico Medicine、Retro Biosciences、Life Biosciences 的新闻、融资、临床、合作、论文、监管动态和判断变化。",
-  },
-  {
-    title: "中国 3 家",
-    body: "更新京东健康、阿里健康、可孚医疗的公告、财务、业务进展、政策催化、股价与风险变化。",
-  },
-  {
-    title: "结论",
-    body: "对每家公司给出维持、上调或下调关注度，并说明主要原因；研报仅作研究监测，不构成投资建议。",
-  },
-];
-
-const matchmakingNeeds = [
-  {
-    actor: "创新药 / CGT 企业",
-    node: "innovative-drugs",
-    stage: "upstream",
-    question: "管线如何进入老龄高发疾病的临床验证和支付路径？",
-    seek: ["专科医院", "真实世界研究", "医保商保", "出海 BD"],
-    resource: "优先看 BioBAY、创新药研究院、苏惠保、临床研究和海外商务交易线索。",
-    nextStep: "补具体适应症、临床阶段、老年亚组数据和已合作医院。",
-  },
-  {
-    actor: "IVD / 伴随诊断 / 早筛企业",
-    node: "ivd-diagnostics",
-    stage: "midstream",
-    question: "检测产品如何从实验室走向体检、慢病管理和康养机构？",
-    seek: ["样本队列", "体检机构", "慢病管理", "伴随诊断"],
-    resource: "优先连接靶点组学、创新药管线、体检服务和长期随访数据。",
-    nextStep: "补筛查病种、验证样本量、临床指南位置和支付方式。",
-  },
-  {
-    actor: "高端器械 / 康复辅具企业",
-    node: "medical-devices",
-    stage: "midstream",
-    question: "获批产品如何进入医院、康养机构、名优目录和苏惠保？",
-    seek: ["医院试用", "康养采购", "创新名优目录", "苏惠保"],
-    resource: "优先看园区大健康行动计划、创新产品推广、机构采购和功能维持场景。",
-    nextStep: "补注册证、真实使用效果、机构采购清单和保单责任。",
-  },
-  {
-    actor: "AI+BT / AI制药 / 生物大模型团队",
-    node: "ai-data",
-    stage: "support",
-    question: "算法、模型和数据平台如何变成可验证的药械研发效率？",
-    seek: ["药企课题", "实验平台", "数据治理", "公共技术服务"],
-    resource: "优先连接 AI4Science、BioBAY 企业、苏州创新药研究院和生物制造平台。",
-    nextStep: "补模型应用边界、验证指标、数据合规和企业共研项目。",
-  },
-  {
-    actor: "康养机构 / 医养结合服务方",
-    node: "elderly-care",
-    stage: "downstream",
-    question: "机构如何找到真正减负、可采购、可评估的适老科技产品？",
-    seek: ["可穿戴", "康复辅具", "护理预警", "照护系统"],
-    resource: "优先看养老院、福利院、康养机构采购智能化适老化产品的政策线索。",
-    nextStep: "补机构试点、使用指标、护理人员反馈和采购预算。",
-  },
-  {
-    actor: "城市 / 园区 / 产业资本",
-    node: "policy-capital",
-    stage: "support",
-    question: "如何把单点企业组织成一个可招商、可验证、可出海的区域样板？",
-    seek: ["标杆案例", "政策工具", "产业基金", "国际合作"],
-    resource: "优先复用 BioBAY 的指标、代表企业、政策工具、四条转化链和证据模型。",
-    nextStep: "补企业规模、重点集群、场景清单、政策工具和真实产品案例。",
-  },
-];
-
 const regionalClusters = [
   {
     name: "苏州 BioBAY",
@@ -526,7 +359,7 @@ const regionalClusters = [
       "适合作为长寿经济的药物研发、国际合作、真实世界研究和高端医疗服务节点，与苏州 BioBAY 形成长三角联动。",
     assets: ["创新药", "临床资源", "跨国药企", "资本市场"],
     gaps: ["康养应用场景", "长期随访数据", "适老科技产品包"],
-    links: [["贡献入口", "#contribute"]],
+    links: [["待补证据", "#evidence"]],
   },
   {
     name: "北京中关村 / 昌平生命谷",
@@ -537,7 +370,7 @@ const regionalClusters = [
       "适合承接长寿医学基础研究、AI 医疗算法、老年疾病临床研究和国家级标准制定。",
     assets: ["科研院所", "AI 医疗", "脑科学", "标准制定"],
     gaps: ["产业化落地", "康养服务网络", "支付侧验证"],
-    links: [["贡献入口", "#contribute"]],
+    links: [["待补证据", "#evidence"]],
   },
   {
     name: "深圳 / 粤港澳大湾区",
@@ -548,7 +381,7 @@ const regionalClusters = [
       "适合作为长寿经济硬件产品、数字健康、居家监测、康复机器人和香港医疗资源联动的试验场。",
     assets: ["医疗器械", "可穿戴", "机器人", "跨境医疗"],
     gaps: ["临床验证", "长期照护场景", "保险支付模型"],
-    links: [["贡献入口", "#contribute"]],
+    links: [["待补证据", "#evidence"]],
   },
   {
     name: "海南博鳌乐城",
@@ -559,7 +392,7 @@ const regionalClusters = [
       "适合观察国际创新药械、特许准入、真实世界数据和高净值健康管理如何与长寿经济结合。",
     assets: ["国际药械", "真实世界研究", "高端医疗", "特许准入"],
     gaps: ["普惠支付", "规模化康养", "数据开放机制"],
-    links: [["贡献入口", "#contribute"]],
+    links: [["待补证据", "#evidence"]],
   },
   {
     name: "成都 / 成渝生命健康带",
@@ -570,7 +403,7 @@ const regionalClusters = [
       "适合补充长寿经济中的康养目的地、慢病服务、中医药现代化和区域医疗中心价值。",
     assets: ["医疗资源", "康养目的地", "中医药", "区域市场"],
     gaps: ["创新药械链接", "数字化运营", "产业资本"],
-    links: [["贡献入口", "#contribute"]],
+    links: [["待补证据", "#evidence"]],
   },
 ];
 
@@ -614,7 +447,6 @@ function getFilteredCollections() {
   return {
     companies: companies.filter(matchesFilters),
     resources: resources.filter(matchesFilters),
-    needs: matchmakingNeeds.filter(matchesFilters),
   };
 }
 
@@ -632,10 +464,6 @@ function getResourceActionLabel(resource) {
 }
 
 function getResultSectionId() {
-  const filtered = getFilteredCollections();
-  if (filtered.companies.length) return "directory";
-  if (filtered.resources.length) return "resources";
-  if (filtered.needs.length) return "matchmaking";
   return "directory";
 }
 
@@ -810,6 +638,7 @@ function zoomMap(multiplier) {
 
 function renderCompanies() {
   const grid = $("#companyGrid");
+  if (!grid) return;
   const filtered = getFilteredCollections().companies;
   const highlight = hasActiveFilter();
   grid.innerHTML = filtered.length
@@ -836,123 +665,9 @@ function renderCompanies() {
     : '<div class="empty">没有匹配结果。可以换一个关键词，或点击图谱节点取消筛选。</div>';
 }
 
-function renderResources() {
-  const list = $("#resourceList");
-  const filtered = getFilteredCollections().resources;
-  const highlight = hasActiveFilter();
-  list.innerHTML = filtered.length
-    ? filtered
-        .map(
-          (resource) => `
-            <article class="resource-row${highlight ? " is-result" : ""}" data-node="${resource.node}">
-              <div class="resource-kind">${resource.kind}</div>
-              <div>
-                <h3>${resource.title}</h3>
-                <p>${resource.summary}</p>
-              </div>
-              <a href="${resource.url}" target="${resource.url.startsWith("http") ? "_blank" : "_self"}" rel="noreferrer">${getResourceActionLabel(resource)}</a>
-            </article>
-          `,
-        )
-        .join("")
-    : '<div class="empty">当前筛选下暂无资源。欢迎在开源仓库中补充。</div>';
-}
-
-function renderWatchlists() {
-  const grid = $("#watchlistGrid");
-  grid.innerHTML = watchlists
-    .map(
-      (list) => `
-        <section class="watchlist-group" aria-label="${list.group}">
-          <h3>${list.group}</h3>
-          <div class="watchlist-cards">
-            ${list.companies
-              .map(
-                (company) => `
-                  <article class="watch-card">
-                    <div class="watch-card-top">
-                      <div>
-                        <span class="ticker">${company.ticker}</span>
-                        <h4>${company.name}</h4>
-                      </div>
-                      <div class="score" aria-label="关注度 ${company.score} 分">${company.score}</div>
-                    </div>
-                    <p class="focus">${company.focus}</p>
-                    <p>${company.thesis}</p>
-                    <div class="tags">
-                      ${company.signals.map((signal) => `<span class="tag">${signal}</span>`).join("")}
-                    </div>
-                    <div class="source-links">
-                      ${company.sources
-                        .map(
-                          ([label, url]) =>
-                            `<a href="${url}" target="_blank" rel="noreferrer">${label}</a>`,
-                        )
-                        .join("")}
-                    </div>
-                  </article>
-                `,
-              )
-              .join("")}
-          </div>
-        </section>
-      `,
-    )
-    .join("");
-}
-
-function renderDailyReportTemplate() {
-  const list = $("#dailyReportList");
-  list.innerHTML = dailyReportTemplate
-    .map(
-      (item, index) => `
-        <article class="daily-step">
-          <span>${index + 1}</span>
-          <div>
-            <h3>${item.title}</h3>
-            <p>${item.body}</p>
-          </div>
-        </article>
-      `,
-    )
-    .join("");
-}
-
-function renderMatchmakingNeeds() {
-  const grid = $("#needGrid");
-  const filtered = getFilteredCollections().needs;
-  const highlight = hasActiveFilter();
-  grid.innerHTML = filtered.length
-    ? filtered
-        .map(
-          (need) => `
-            <article class="need-card${highlight ? " is-result" : ""}" data-node="${need.node}">
-              <div class="need-card-top">
-                <span>${stageLabels[need.stage]}</span>
-                <strong>${nodes.find((node) => node.id === need.node).name}</strong>
-              </div>
-              <h3>${need.actor}</h3>
-              <p class="need-question">${need.question}</p>
-              <div class="tags">
-                ${need.seek.map((item) => `<span class="tag">${item}</span>`).join("")}
-              </div>
-              <div class="need-block">
-                <span>可找资源</span>
-                <p>${need.resource}</p>
-              </div>
-              <div class="need-block is-next">
-                <span>下一步补证据</span>
-                <p>${need.nextStep}</p>
-              </div>
-            </article>
-          `,
-        )
-        .join("")
-    : '<div class="empty">当前筛选下暂无合作需求卡。可以换一个关键词，或点击图谱节点取消筛选。</div>';
-}
-
 function renderRegionalClusters() {
   const grid = $("#clusterGrid");
+  if (!grid) return;
   const filtered = regionalClusters.filter(includesQuery);
   grid.innerHTML = filtered.length
     ? filtered
@@ -1037,11 +752,59 @@ function renderRegionalClusters() {
     : '<div class="empty">当前关键词下暂无产业聚集地案例。欢迎补充新的区域样本。</div>';
 }
 
+function renderNodeInspector() {
+  const panel = $("#nodeInspector");
+  if (!panel) return;
+  const activeNodeId = state.selectedNode || state.hoveredNode;
+  const node = activeNodeId ? nodes.find((item) => item.id === activeNodeId) : null;
+
+  if (!node) {
+    panel.innerHTML = `
+      <div class="inspector-empty">
+        <span>等待选择</span>
+        <strong>悬停节点看链路，点击节点锁定详情。</strong>
+        <p>图谱现在更像一个可探索的生命科技网络：你可以拖拽、缩放、悬停和点击节点，查看产业链如何从研发、产品、服务走向支撑生态。</p>
+      </div>
+    `;
+    return;
+  }
+
+  const relatedNodes = [...getRelatedNodeIds(node.id)]
+    .filter((id) => id !== node.id)
+    .map((id) => nodes.find((item) => item.id === id)?.name)
+    .filter(Boolean);
+  const nodeCompanies = companies.filter((company) => company.node === node.id);
+  const nodeResources = resources.filter((resource) => resource.node === node.id);
+
+  panel.innerHTML = `
+    <div class="inspector-active">
+      <div>
+        <span>${node.type}</span>
+        <h3>${node.name}</h3>
+        <p>${nodeCompanies[0]?.need || "这个节点仍需要继续补充公开证据、代表企业和应用场景。"}</p>
+      </div>
+      <div class="inspector-stats">
+        <div><strong>${nodeCompanies.length}</strong><span>能力样例</span></div>
+        <div><strong>${nodeResources.length}</strong><span>证据入口</span></div>
+        <div><strong>${relatedNodes.length}</strong><span>一跳链路</span></div>
+      </div>
+      <div class="tags">
+        ${nodeCompanies.flatMap((company) => company.tags).slice(0, 6).map((tag) => `<span class="tag">${tag}</span>`).join("")}
+      </div>
+      <div class="inspector-links">
+        <strong>相关节点</strong>
+        <p>${relatedNodes.join(" / ") || "暂无一跳链路"}</p>
+      </div>
+    </div>
+  `;
+}
+
 function renderStats() {
   const filtered = getFilteredCollections();
   $("#nodeCount").textContent = nodes.length;
   $("#companyCount").textContent = filtered.companies.length;
-  $("#resourceCount").textContent = filtered.resources.length;
+  const clusterCount = $("#clusterCount");
+  if (clusterCount) clusterCount.textContent = regionalClusters.filter(includesQuery).length;
 }
 
 function renderFilterSummary() {
@@ -1056,18 +819,15 @@ function renderFilterSummary() {
   ].filter(Boolean);
   summary.innerHTML = `
     <strong>${filters.length ? filters.join(" + ") : "全部数据"}</strong>
-    <span>当前筛选到 ${filtered.companies.length} 个能力样例、${filtered.resources.length} 个资源入口、${filtered.needs.length} 个合作需求。</span>
+    <span>当前显示 ${filtered.companies.length} 个能力样例、${regionalClusters.filter(includesQuery).length} 个地域样本。悬停节点高亮链路，点击节点锁定详情。</span>
   `;
 }
 
 function render() {
   drawMap();
   renderRegionalClusters();
-  renderMatchmakingNeeds();
-  renderWatchlists();
-  renderDailyReportTemplate();
   renderCompanies();
-  renderResources();
+  renderNodeInspector();
   renderStats();
   renderFilterSummary();
   if (state.shouldFocusResults) {
