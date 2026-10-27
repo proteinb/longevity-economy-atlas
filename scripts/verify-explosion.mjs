@@ -2,24 +2,18 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {runInNewContext,createContext,runInContext} from 'node:vm';
 const read=p=>readFileSync(p,'utf8');
-const bed=runInNewContext(read('model-source/model.js')+';({explodedPosition,EXPLODE_VECTORS})');
-for(const vector of Object.values(bed.EXPLODE_VECTORS)){
- const base=[1.25,-2,3.5];for(let i=0;i<1000;i++){
-  assert.deepEqual([...bed.explodedPosition(base,vector,0)],base);
-  assert.deepEqual([...bed.explodedPosition(base,vector,1)],base.map((n,j)=>n+vector[j]));
- }assert.deepEqual([...bed.explodedPosition(base,vector,.5)],base.map((n,j)=>n+vector[j]*.5));
-}
-for(const name of ['smart-toilet','smoke-alarm','accessible-shower']){
- const html=read(`figures/${name}.html`),scripts=[...html.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/g)].map(m=>m[1]);
- const context=createContext({});runInContext(scripts[0],context);
+for(const name of ['nursing-bed','smart-toilet','smoke-alarm','accessible-shower']){
+ const html=read(name==='nursing-bed'?'care-bed.html':`figures/${name}.html`),scripts=[...html.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/g)].map(m=>m[1]);
+ const context=createContext({});runInContext(scripts.find(s=>s.includes('root.Sketch3D =')),context);
  context.Sketch3D.mount=(_target,make)=>{context.scene=make(context.Sketch3D.S,context.Sketch3D.M);};
- runInContext(scripts[1],context);
+ runInContext(scripts.find(s=>s.includes("\nSketch3D.mount('#app'")),context);
  const vectors=JSON.parse(html.match(/const explodeVectors=(\{[^;]+\});/)[1]);
  for(const id of Object.keys(vectors))assert(context.scene.parts.some(p=>p.id===id),`${name}: missing ${id}`);
- const engine=scripts[0],matrix=engine.slice(engine.indexOf('  const add ='),engine.indexOf('  const AXIS ='));
+ const engine=scripts.find(s=>s.includes('root.Sketch3D =')),matrix=engine.slice(engine.indexOf('  const add ='),engine.indexOf('  const AXIS ='));
  const worlds=engine.slice(engine.indexOf('    function worlds(e)'),engine.indexOf('    /* —— 取景'));
- const parts=context.scene.parts.map(p=>({id:p.id,def:{...p,explode:vectors[p.id]||[0,0,0]}}));
- const ctx=createContext({order:parts,poses:{}});runInContext('const D2R=Math.PI/180;'+matrix+worlds,ctx);
+ const parts=context.scene.parts.map(p=>({id:p.id,def:{...p,explode:vectors[p.id]||p.explode||[0,0,0]}}));
+ const byId=Object.fromEntries(parts.map(p=>[p.id,p]));parts.forEach(p=>p.parent=p.def.parent?byId[p.def.parent]:null);const order=[],seen=new Set();function visit(p){if(seen.has(p))return;if(p.parent)visit(p.parent);seen.add(p);order.push(p);}parts.forEach(visit);
+ const ctx=createContext({order,poses:{}});runInContext('const D2R=Math.PI/180;'+matrix+worlds,ctx);
  runInContext('worlds(0)',ctx);const baseline=JSON.stringify(parts.map(p=>p.W));
  for(let i=0;i<50;i++){runInContext('worlds(1);worlds(0)',ctx);assert.equal(JSON.stringify(parts.map(p=>p.W)),baseline,`${name}: drift`);}
  runInContext('worlds(.5)',ctx);assert.notEqual(JSON.stringify(parts.map(p=>p.W)),baseline);
@@ -43,4 +37,4 @@ const handler=gallery.match(/b.onkeydown=(e=>\{[\s\S]*?)\n \};/)[1]+'\n }';
 const items=[{id:'a'},{id:'b'},{id:'c'},{id:'d'}];items.at=undefined;
 const ctx={items,current:items[0],neighbor:()=>items[1],render:x=>{ctx.selected=x.id;}};
 runInNewContext('const keydown='+handler+';keydown({key:"End",preventDefault(){}})',ctx);assert.equal(ctx.selected,'d');
-console.log('PASS: real geometry registries; 1,000 bed reversals / 50 matrix reversals per imported model; half offsets; reduced-motion immediate state; legacy End key.');
+console.log('PASS: real geometry registries; 50 matrix reversals per model including parent transforms; half offsets; reduced-motion immediate state; legacy End key.');

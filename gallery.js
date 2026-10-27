@@ -1,4 +1,4 @@
-import {items,resolveItem,neighbor} from './gallery-catalog.js';
+import {items,resolveItem,neighbor} from './gallery-catalog.js?v=nursing-20261027';
 const $=s=>document.querySelector(s),tabs=[...document.querySelectorAll('[data-item]')],host=$('#model-host');
 let current=null,frame=null,loadTimer=null,loadController=null;
 function render(item,{historyMode='none',focus=false}={}){
@@ -20,7 +20,7 @@ function render(item,{historyMode='none',focus=false}={}){
  frame.onload=e=>{if(e.currentTarget!==frame||!frame.hasAttribute('srcdoc'))return;clearTimeout(loadTimer);loading.remove();};
  host.replaceChildren(loading,frame);host.dataset.item=item.id;
  const controller=new AbortController();loadController=controller;
- fetch(item.src,{signal:controller.signal}).then(response=>{if(!response.ok)throw new Error('HTTP '+response.status);return response.text();}).then(html=>{if(controller.signal.aborted||loadController!==controller)return;frame.srcdoc=html;}).catch(error=>{if(controller.signal.aborted)return;loading.textContent='图鉴下载未完成，请切换后重试，或打开完整体验。';const link=document.createElement('a');link.href=item.src;link.textContent='打开完整体验';loading.appendChild(link);});
+ fetch(item.src,{cache:'no-cache',signal:controller.signal}).then(response=>{if(!response.ok)throw new Error('HTTP '+response.status);return response.text();}).then(html=>{if(controller.signal.aborted||loadController!==controller)return;frame.srcdoc=html;}).catch(error=>{if(controller.signal.aborted)return;loading.textContent='图鉴下载未完成，请切换后重试，或打开完整体验。';const link=document.createElement('a');link.href=item.src;link.textContent='打开完整体验';loading.appendChild(link);});
  loadTimer=setTimeout(()=>{if(!loading.isConnected)return;loading.textContent='模型加载较慢。';const retry=document.createElement('button');retry.textContent='重试';retry.onclick=()=>{current=null;render(item);};loading.appendChild(retry);const direct=document.createElement('a');direct.href=item.src;direct.textContent='打开完整体验';loading.appendChild(direct);},12000);
  if(historyMode!=='none'){
   const url=new URL(location.href);url.searchParams.set('item',item.id);
@@ -43,7 +43,7 @@ $('#next-item').onclick=()=>render(neighbor(current.id,1),{historyMode:'push'});
 addEventListener('popstate',()=>render(resolveItem(new URLSearchParams(location.search).get('item'))));
 addEventListener('message',e=>{
  if(!frame||e.source!==frame.contentWindow||e.data?.type!=='agingbuy:model-size')return;
- const height=Number(e.data.height);if(Number.isFinite(height)&&height>0)frame.style.height=Math.min(1400,Math.max(580,height+8))+'px';
+ const height=Number(e.data.height);if(Number.isFinite(height)&&height>0)frame.style.height=Math.min(current?.id==='care-bed'?2400:1400,Math.max(580,height+8))+'px';
 });
 document.addEventListener('visibilitychange',()=>{if(document.hidden)frame?.contentWindow?.postMessage({type:'agingbuy:pause'},'*');});
 const requested=new URLSearchParams(location.search).get('item');

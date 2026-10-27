@@ -1,0 +1,34 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {createHash} from 'node:crypto';
+import {createContext,runInContext,Script} from 'node:vm';
+const source=readFileSync('model-source/nursing-bed.html','utf8');
+assert.equal(readFileSync('care-bed.html','utf8'),source,'published file must match editable source');
+const scripts=[...source.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/g)].map(m=>m[1]);
+scripts.forEach(s=>new Script(s));
+const engine=scripts.find(s=>s.includes('root.Sketch3D ='));
+const ctx=createContext({});runInContext(engine,ctx);
+ctx.Sketch3D.mount=(_,make)=>ctx.scene=make(ctx.Sketch3D.S,ctx.Sketch3D.M);
+runInContext(scripts.find(s=>s.includes("\nSketch3D.mount('#app'")),ctx);
+const scene=ctx.scene;
+const geometry=scene.parts.map(({id,parent,mesh,color,at,rot})=>({id,parent,mesh,color,at,rot}));
+assert.equal(createHash('sha256').update(JSON.stringify(geometry)).digest('hex'),'d5538902005226e92f2053811cbfe8d8c7eeeebe44e05129da3a1d52f6b196bf','preserve all 52 original meshes, colours, parents and initial poses');
+assert.equal(scene.parts.length,52);assert.equal(scene.steps.length,7);
+assert.deepEqual(Array.from(scene.buttons,b=>b.id),['brake','up','knee','back','flat','tilt','down']);
+const poses=new Map();let count=0;
+for(let i=0;i<=720;i++){
+ const u=i/720;poses.clear();
+ scene.animate(u,{set:(id,pose)=>{assert(scene.parts.some(p=>p.id===id));poses.set(id,pose);},view(){},flow(){}});
+ for(const pose of poses.values())for(const v of Object.values(pose))if(Array.isArray(v))v.forEach(x=>assert(Number.isFinite(x)));
+ count++;
+}
+assert(!/<(?:script|link)[^>]+(?:src|href)=["']https?:/i.test(source),'no network dependencies');
+assert(source.includes('未经实物核验'));assert(source.includes('所有尺寸、角度与读数均为模型算例'));
+assert(!source.includes('休克时'));assert(!source.includes('真实运行速度'));
+const controls=engine.slice(engine.indexOf('    function togglePlay()'),engine.indexOf('    function showNote('));
+const state=createContext({document:{documentElement:{dataset:{}}},bPlay:{firstChild:{},setAttribute(){}},bMode:{firstChild:{}},bReset:{},pRow:{},wrap:{querySelector:()=>null},pbs:[],bSpeed:{firstChild:{}},bX:null,bL:null,bE:null,expRange:{},expOutput:{},view0:{zoom:1},reduce:false,clamp:(x,a,b)=>Math.max(a,Math.min(b,x))});
+runInContext('let playing=true,expl=0,expT=0,labelMode=1,camGoal={},focusGoal={},zoom=2,lastViewKey="x",mode="buttons",curSeg=null,done=new Set(),speedIx=0,uAbs=0,u=0,pinned=null,lastStep=0,camLock=false;const SPEEDS=[1];'+controls,state);
+runInContext('setExplosion(1)',state);assert.equal(runInContext('playing',state),false);
+runInContext('togglePlay()',state);assert.equal(runInContext('playing',state),true);assert.equal(runInContext('expl+expT',state),0);
+runInContext('setExplosion(.5);setMode("buttons")',state);assert.equal(runInContext('expl+expT',state),0);assert.equal(runInContext('playing',state),false);
+console.log(`PASS: original 52-part geometry unchanged; seven actions finite across ${count} poses; offline syntax; explosion/play/mode coordination.`);
