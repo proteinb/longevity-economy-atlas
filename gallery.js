@@ -1,8 +1,9 @@
 import {items,resolveItem,neighbor} from './gallery-catalog.js';
 const $=s=>document.querySelector(s),tabs=[...document.querySelectorAll('[data-item]')],host=$('#model-host');
-let current=null,frame=null;
+let current=null,frame=null,loadTimer=null;
 function render(item,{historyMode='none',focus=false}={}){
  if(current?.id===item.id)return;
+ clearTimeout(loadTimer);
  // Removing the browsing context stops its animation, timers and input state.
  if(frame){frame.contentWindow?.postMessage({type:'agingbuy:pause'},'*');frame.remove();}
  current=item;
@@ -14,8 +15,11 @@ function render(item,{historyMode='none',focus=false}={}){
  $('#full-experience').href=item.src;$('#full-experience').setAttribute('aria-label',`打开${item.name}完整体验`);
  $('#model-panel').setAttribute('aria-labelledby','tab-'+item.id);
  [...document.querySelectorAll('.focus-list article')].forEach((article,i)=>{article.querySelector('h3').textContent=item.focus[i][0];article.querySelector('p').textContent=item.focus[i][1];});
- frame=document.createElement('iframe');frame.title=item.name+' · '+item.scope;frame.setAttribute('sandbox','allow-scripts');frame.setAttribute('referrerpolicy','no-referrer');const modelUrl=new URL(item.src,location.href);modelUrl.searchParams.set('v','explode-20261027');frame.src=modelUrl.href;frame.style.height=item.id==='care-bed'?'660px':'740px';
- host.replaceChildren(frame);host.dataset.item=item.id;
+ frame=document.createElement('iframe');frame.title=item.name+' · '+item.scope;frame.setAttribute('sandbox','allow-scripts');frame.setAttribute('referrerpolicy','no-referrer');frame.src=item.src;frame.style.height=item.id==='care-bed'?'660px':'740px';
+ const loading=document.createElement('p');loading.className='model-loading';loading.setAttribute('role','status');loading.textContent='正在加载'+item.name+'图鉴…';
+ frame.onload=()=>{clearTimeout(loadTimer);loading.remove();};
+ host.replaceChildren(loading,frame);host.dataset.item=item.id;
+ loadTimer=setTimeout(()=>{if(!loading.isConnected)return;loading.textContent='模型加载较慢。';const retry=document.createElement('button');retry.textContent='重试';retry.onclick=()=>{current=null;render(item);};loading.appendChild(retry);const direct=document.createElement('a');direct.href=item.src;direct.textContent='打开完整体验';loading.appendChild(direct);},12000);
  if(historyMode!=='none'){
   const url=new URL(location.href);url.searchParams.set('item',item.id);
   history[historyMode==='replace'?'replaceState':'pushState']({item:item.id},'',url);
