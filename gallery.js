@@ -1,9 +1,9 @@
 import {items,resolveItem,neighbor} from './gallery-catalog.js';
 const $=s=>document.querySelector(s),tabs=[...document.querySelectorAll('[data-item]')],host=$('#model-host');
-let current=null,frame=null,loadTimer=null;
+let current=null,frame=null,loadTimer=null,loadController=null;
 function render(item,{historyMode='none',focus=false}={}){
  if(current?.id===item.id)return;
- clearTimeout(loadTimer);
+ clearTimeout(loadTimer);loadController?.abort();
  // Removing the browsing context stops its animation, timers and input state.
  if(frame){frame.contentWindow?.postMessage({type:'agingbuy:pause'},'*');frame.remove();}
  current=item;
@@ -15,10 +15,12 @@ function render(item,{historyMode='none',focus=false}={}){
  $('#full-experience').href=item.src;$('#full-experience').setAttribute('aria-label',`打开${item.name}完整体验`);
  $('#model-panel').setAttribute('aria-labelledby','tab-'+item.id);
  [...document.querySelectorAll('.focus-list article')].forEach((article,i)=>{article.querySelector('h3').textContent=item.focus[i][0];article.querySelector('p').textContent=item.focus[i][1];});
- frame=document.createElement('iframe');frame.title=item.name+' · '+item.scope;frame.setAttribute('sandbox','allow-scripts');frame.setAttribute('referrerpolicy','no-referrer');frame.src=item.src;frame.style.height=item.id==='care-bed'?'660px':'740px';
+ frame=document.createElement('iframe');frame.title=item.name+' · '+item.scope;frame.setAttribute('sandbox','allow-scripts');frame.setAttribute('referrerpolicy','no-referrer');frame.dataset.modelSrc=item.src;frame.style.height=item.id==='care-bed'?'660px':'740px';
  const loading=document.createElement('p');loading.className='model-loading';loading.setAttribute('role','status');loading.textContent='正在加载'+item.name+'图鉴…';
- frame.onload=()=>{clearTimeout(loadTimer);loading.remove();};
+ frame.onload=e=>{if(e.currentTarget!==frame||!frame.hasAttribute('srcdoc'))return;clearTimeout(loadTimer);loading.remove();};
  host.replaceChildren(loading,frame);host.dataset.item=item.id;
+ const controller=new AbortController();loadController=controller;
+ fetch(item.src,{signal:controller.signal}).then(response=>{if(!response.ok)throw new Error('HTTP '+response.status);return response.text();}).then(html=>{if(controller.signal.aborted||loadController!==controller)return;frame.srcdoc=html;}).catch(error=>{if(controller.signal.aborted)return;loading.textContent='图鉴下载未完成，请切换后重试，或打开完整体验。';const link=document.createElement('a');link.href=item.src;link.textContent='打开完整体验';loading.appendChild(link);});
  loadTimer=setTimeout(()=>{if(!loading.isConnected)return;loading.textContent='模型加载较慢。';const retry=document.createElement('button');retry.textContent='重试';retry.onclick=()=>{current=null;render(item);};loading.appendChild(retry);const direct=document.createElement('a');direct.href=item.src;direct.textContent='打开完整体验';loading.appendChild(direct);},12000);
  if(historyMode!=='none'){
   const url=new URL(location.href);url.searchParams.set('item',item.id);
