@@ -43,7 +43,7 @@ $('#next-item').onclick=()=>render(neighbor(current.id,1),{historyMode:'push'});
 addEventListener('popstate',()=>render(resolveItem(new URLSearchParams(location.search).get('item'))));
 addEventListener('message',e=>{
  if(!frame||e.source!==frame.contentWindow||e.data?.type!=='agingbuy:model-size')return;
- const height=Number(e.data.height);if(Number.isFinite(height)&&height>0)frame.style.height=Math.min(current?.id==='care-bed'?2400:1400,Math.max(580,height+8))+'px';
+ const height=Number(e.data.height);if(Number.isFinite(height)&&height>0)frame.style.height=Math.min(2600,Math.max(580,height+8))+'px';
 });
 document.addEventListener('visibilitychange',()=>{if(document.hidden)frame?.contentWindow?.postMessage({type:'agingbuy:pause'},'*');});
 const requested=new URLSearchParams(location.search).get('item');

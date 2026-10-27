@@ -4,6 +4,18 @@
 <meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src 'none'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'"><style>
 .import-notice{font:12px/1.7 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;color:#536052;background:#f2f5ee;padding:9px 14px;margin:0 12px 7px;border-radius:5px}
 .sk{--hand:"Helvetica Neue","PingFang SC",sans-serif!important;--cn:"Helvetica Neue","PingFang SC",sans-serif!important;padding:12px!important}.sk .sk-title{font-size:21px;line-height:1.4;font-weight:500}.sk .sk-fig{display:none}.sk .sk-sub{font:12px/1.7 "PingFang SC",sans-serif}.sk .sk-stage{height:330px;border:1px solid #cdd5c7;border-radius:8px}.sk .sk-caption{font:13px/1.8 "PingFang SC",sans-serif}.sk .sk-controls{gap:7px}.sk .sk-btn{font:12px "PingFang SC",sans-serif;min-height:40px;border:1px solid #bcc9b5;border-radius:5px;box-shadow:none}.sk .sk-step{font:12px "PingFang SC",sans-serif;min-height:36px}.sk .sk-readout{font:11px/1.7 ui-monospace,monospace}.sk .sk-label{font-size:12px}.sk .sk-stage:focus-visible,.sk button:focus-visible{outline:3px solid #91641d;outline-offset:2px}@media(max-width:550px){.sk .sk-stage{height:290px}.sk .sk-title{font-size:18px}.sk .sk-btn{min-height:42px}.sk .sk-caption{font-size:13px}.sk .sk-label{font-size:11px}}
+
+
+/* Compact screens keep the number-to-name key directly beside the drawing. */
+.sk-part-name{display:none}
+.sk-part-panel{display:none}
+.sk.pins .sk-part-panel{display:block;margin:12px 4px 18px}
+.sk-part-title{font-size:14px;font-weight:700;margin:0 0 7px;line-height:1.5}
+.sk.pins .sk-part-panel .sk-legend{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px 8px;columns:auto;margin:0;font-size:14px;line-height:1.4}
+.sk.pins .sk-part-panel .sk-legend li{min-height:44px;padding:7px 5px;border:1px solid #d9ddd4;white-space:normal}
+.sk.pins .sk-part-panel .sk-legend li[aria-pressed=true]{border-color:#284f43;box-shadow:inset 0 0 0 1px #284f43}
+.sk.compact .sk-part-name{display:block;position:absolute;left:8px;right:8px;top:8px;z-index:2;pointer-events:none;background:rgba(255,251,230,.96);border:1px solid #bab59b;border-radius:9px;padding:7px 9px;font-size:14px;line-height:1.4;min-height:34px}
+.sk.compact .sk-readout{font-size:12px}
 </style>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>无障碍淋浴间</title>
@@ -520,7 +532,10 @@ body{padding:8px 0 24px}
     btn('缩小','',()=>{zoom=clamp(zoom/1.15,.45,3.2);camGoal=null;});
     btn('放大','',()=>{zoom=clamp(zoom*1.15,.45,3.2);camGoal=null;});
     btn('复位模型','',()=>{playing=false;u=uAbs=0;expl=expT=0;pinned=null;labelMode=0;xray=xrayT=scene.xray?1:0;lastViewKey='';focusGoal=null;resetView();syncButtons();});
-    const legend = el('ol', 'sk-legend'); wrap.appendChild(legend);
+    const partPanel=el('section','sk-part-panel');partPanel.setAttribute('aria-label','部件名称');
+    partPanel.appendChild(el('p','sk-part-title','部件名称 · 点编号或名称查看'));
+    const legend = el('ol', 'sk-legend');partPanel.appendChild(legend);wrap.insertBefore(partPanel,stage.nextSibling);
+    const partName=el('div','sk-part-name','点图中编号，查看中文部件名');partName.setAttribute('role','status');stage.appendChild(partName);
     labeled.forEach((P) => {
       const li = el('li'); const i = el('i', '', String(P.no)); i.style.setProperty('--c', css(mixc(P.base, WHITE, 0.3)));
       li.style.setProperty('--tint', css(mixc(P.base, WHITE, 0.62)));
@@ -562,7 +577,7 @@ body{padding:8px 0 24px}
     }
     syncButtons();
     function showNote(P) {
-      if (!P) return; caption.innerHTML = '';
+      if (!P) return; let named=P;while(!named.label&&named.parent)named=named.parent;partName.textContent=(named.no?named.no+' · ':'')+(named.label||named.def.name||'未命名示意部件');partName.dataset.partId=named.id; caption.innerHTML = '';
       const b = el('b', '', P.label || P.def.name || P.id); b.style.setProperty('--tint', css(mixc(P.base, WHITE, 0.55)));
       caption.appendChild(b); caption.appendChild(document.createTextNode(P.note || '')); lastStep = -3;
     }
@@ -673,7 +688,7 @@ body{padding:8px 0 24px}
       if (hit) { e.preventDefault(); syncButtons(); }
     });
     let onScreen = true;
-    new IntersectionObserver((en) => { onScreen = en[0].isIntersecting; if (onScreen && !raf) raf = requestAnimationFrame(frame); }).observe(stage);
+    document.addEventListener('visibilitychange', () => { onScreen=!document.hidden; if(onScreen&&!raf)raf=requestAnimationFrame(frame); });
 
     /* —— 投影 —— */
     let cam = null;

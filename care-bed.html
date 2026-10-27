@@ -8,6 +8,18 @@
 :root{color-scheme:light}
 html,body{margin:0;background:#fff}
 body{padding:8px 0 24px}
+
+
+/* Compact screens keep the number-to-name key directly beside the drawing. */
+.sk-part-name{display:none}
+.sk-part-panel{display:none}
+.sk.pins .sk-part-panel{display:block;margin:12px 4px 18px}
+.sk-part-title{font-size:14px;font-weight:700;margin:0 0 7px;line-height:1.5}
+.sk.pins .sk-part-panel .sk-legend{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px 8px;columns:auto;margin:0;font-size:14px;line-height:1.4}
+.sk.pins .sk-part-panel .sk-legend li{min-height:44px;padding:7px 5px;border:1px solid #d9ddd4;white-space:normal}
+.sk.pins .sk-part-panel .sk-legend li[aria-pressed=true]{border-color:#284f43;box-shadow:inset 0 0 0 1px #284f43}
+.sk.compact .sk-part-name{display:block;position:absolute;left:8px;right:8px;top:8px;z-index:2;pointer-events:none;background:rgba(255,251,230,.96);border:1px solid #bab59b;border-radius:9px;padding:7px 9px;font-size:14px;line-height:1.4;min-height:34px}
+.sk.compact .sk-readout{font-size:12px}
 </style>
 <style>.nursing-scope{font:12px/1.7 -apple-system,"PingFang SC",sans-serif;color:#536052;background:#f2f5ee;padding:9px 14px;margin:0 auto 8px;max-width:1080px;border-radius:8px}.nursing-explosion{display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin:14px 4px 8px}.nursing-explosion #explode{background:#fff1b0;font-weight:bold;min-height:44px}.nursing-explosion label,.nursing-explosion output{font:14px var(--cn);white-space:nowrap}.nursing-explosion input{flex:1;min-width:80px;max-width:350px;accent-color:#284f43}.nursing-exp-note{font:12px/1.6 var(--cn);color:#6b6f85;margin:4px 4px 10px}.sk [role=button]:focus-visible,.sk button:focus-visible,.sk input:focus-visible{outline:3px solid #91641d;outline-offset:3px}@media(prefers-reduced-motion:reduce){.sk *{transition:none!important;animation:none!important}}</style></head>
 <body>
@@ -557,7 +569,10 @@ body{padding:8px 0 24px}
     const expNote=el('p','nursing-exp-note','概念拆解；展开暂停动作，播放或选步骤先合拢。');wrap.insertBefore(expNote,stage);expRange.addEventListener('input',()=>setExplosion(Number(expRange.value)/100,true));
     btn('缩小','',()=>{zoom=clamp(zoom/1.15,.45,3.2);camGoal=null;});btn('放大','',()=>{zoom=clamp(zoom*1.15,.45,3.2);camGoal=null;});
     btn('复位模型','',()=>{expl=expT=0;labelMode=0;xray=xrayT=0;focusGoal=null;camLock=false;lastViewKey='';setMode('buttons');resetView();syncButtons();});
-    const legend = el('ol', 'sk-legend'); wrap.appendChild(legend);
+    const partPanel=el('section','sk-part-panel');partPanel.setAttribute('aria-label','部件名称');
+    partPanel.appendChild(el('p','sk-part-title','部件名称 · 点编号或名称查看'));
+    const legend = el('ol', 'sk-legend');partPanel.appendChild(legend);wrap.insertBefore(partPanel,stage.nextSibling);
+    const partName=el('div','sk-part-name','点图中编号，查看中文部件名');partName.setAttribute('role','status');stage.appendChild(partName);
     labeled.forEach((P) => {
       const li = el('li'); const i = el('i', '', String(P.no)); i.style.setProperty('--c', css(mixc(P.base, WHITE, 0.3)));
       li.style.setProperty('--tint', css(mixc(P.base, WHITE, 0.62)));
@@ -637,7 +652,7 @@ body{padding:8px 0 24px}
     }
     syncButtons();
     function showNote(P) {
-      if (!P) return; caption.innerHTML = '';
+      if (!P) return; let named=P;while(!named.label&&named.parent)named=named.parent;partName.textContent=(named.no?named.no+' · ':'')+(named.label||named.def.name||'未命名示意部件');partName.dataset.partId=named.id; caption.innerHTML = '';
       const b = el('b', '', P.label || P.def.name || P.id); b.style.setProperty('--tint', css(mixc(P.base, WHITE, 0.55)));
       caption.appendChild(b); caption.appendChild(document.createTextNode(P.note || '')); lastStep = -3;
     }
