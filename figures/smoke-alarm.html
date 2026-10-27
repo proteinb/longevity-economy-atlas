@@ -12,7 +12,9 @@
 html,body{margin:0;background:#fff}
 body{padding:8px 0 24px}
 </style>
-</head>
+<style>
+.aging-explosion{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:14px 0 6px}.aging-explosion #explode{background:#284f43;color:#fff;min-height:44px;font:600 15px 'PingFang SC',sans-serif;padding:10px 22px;border-radius:6px;border:0}.aging-explosion label,.aging-explosion output{font:12px 'PingFang SC',sans-serif}.aging-explosion input{flex:1;min-width:75px;width:100px;accent-color:#284f43}.aging-explosion-note{font:11px/1.6 'PingFang SC',sans-serif;color:#62665c;margin:0 0 8px}.sk-legend [role=button]{cursor:pointer}.sk-legend [role=button]:focus-visible,.sk-label:focus-visible{outline:3px solid #91641d;outline-offset:2px}@media(prefers-reduced-motion:reduce){.sk *{transition:none!important}}
+</style></head>
 <body>
 <aside class="import-notice">用户附件 · 教学示意，非实物验证。标准、参数与安全效果未核验。</aside><div id="app"></div>
 <script>
@@ -388,6 +390,9 @@ body{padding:8px 0 24px}
     injectCSS();
     const host = typeof target === 'string' ? document.querySelector(target) : target;
     const scene = typeof sceneIn === 'function' ? sceneIn(S, M) : sceneIn;
+    // AGINGBUY_EXPLODED: explicit illustrative world-space assembly offsets.
+    const explodeVectors={"base":[0,3,0],"cover":[0,-6,0],"vents":[0,-6,0],"pcb":[0,0.8,0],"mcu":[4,1.5,3],"battery":[-5,-1,3],"horn":[5,-1,-3],"maze":[0,-2,0],"caps":[0,-3,0],"ledIR":[-3,-3,-1],"pd":[3,-3,-1],"button":[0,-9,0],"ledR":[-2,-9,0],"ledY":[2,-9,0]};
+    scene.parts.forEach(p=>{if(explodeVectors[p.id])p.explode=explodeVectors[p.id];});
     const style = Object.assign({ line: 1.9, rough: 1.25, hatch: true, crease: 38, dim: 0.42, ink: PAL.ink }, scene.style || {});
     const INK = rgb(style.ink);
     const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -469,7 +474,7 @@ body{padding:8px 0 24px}
       L.addEventListener('pointerenter', () => { hoverPart = P; });
       L.addEventListener('pointerleave', () => { if (hoverPart === P) hoverPart = null; });
       L.addEventListener('click', (e) => { e.stopPropagation(); pinned = pinned === P ? null : P; showNote(P); });
-      labelLayer.appendChild(L);
+      L.tabIndex=0;L.setAttribute('role','button');L.setAttribute('aria-label',P.label);L.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();pinned=pinned===P?null:P;showNote(P);}});labelLayer.appendChild(L);
       P.L = { el: L, side: 0, y: null, x: null, w: 80, h: 26, ty: 0 };
     });
 
@@ -499,19 +504,29 @@ body{padding:8px 0 24px}
     const controls = el('div', 'sk-controls'); wrap.appendChild(controls);
     const btn = (txt, key, fn) => { const b = el('button', 'sk-btn'); b.type = 'button'; b.appendChild(document.createTextNode(txt)); if (key) b.appendChild(el('kbd', '', key)); b.addEventListener('click', fn); controls.appendChild(b); return b; };
     const hasShell = parts.some((P) => P.role === 'shell'), hasExplode = parts.some((P) => P.def.explode);
-    const bPlay = btn('暂停', '空格', () => { playing = !playing; syncButtons(); });
+    const bPlay = btn('暂停', '空格', () => { togglePlay(); });
     const bSpeed = btn('速度 1×', '', () => { speedIx = (speedIx + 1) % SPEEDS.length; syncButtons(); });
     const bX = hasShell ? btn('透视', 'X', () => { xrayT = xrayT ? 0 : 1; syncButtons(); }) : null;
     const bL = labeled.length ? btn('标注', 'L', () => { labelMode = (labelMode + 1) % 3; syncButtons(); }) : null;
-    const bE = hasExplode ? btn('拆开', 'E', () => { expT = expT ? 0 : 1; syncButtons(); }) : null;
+    const bE = hasExplode ? btn('一键爆炸', 'E', () => { setExplosion(expT > 0 ? 0 : 1); }) : null;
     btn('复位视角', 'R', () => resetView());
+    const explosionBar=el('div','aging-explosion');
+    const expLabel=el('label','','展开程度');expLabel.htmlFor='explode-range';
+    const expRange=el('input');expRange.type='range';expRange.id='explode-range';expRange.min='0';expRange.max='100';expRange.step='1';expRange.value='0';
+    const expOutput=el('output','','0%');expOutput.setAttribute('for','explode-range');
+    if(bE){bE.id='explode';explosionBar.appendChild(bE);}explosionBar.appendChild(expLabel);explosionBar.appendChild(expRange);explosionBar.appendChild(expOutput);wrap.insertBefore(explosionBar,stage);
+    const expNote=el('p','aging-explosion-note','概念拆解 · 非厂商装配图；展开暂停流程，播放先合拢。');wrap.insertBefore(expNote,stage);
+    expRange.addEventListener('input',()=>setExplosion(Number(expRange.value)/100,true));
+    btn('缩小','',()=>{zoom=clamp(zoom/1.15,.45,3.2);camGoal=null;});
+    btn('放大','',()=>{zoom=clamp(zoom*1.15,.45,3.2);camGoal=null;});
+    btn('复位模型','',()=>{playing=false;u=uAbs=0;expl=expT=0;pinned=null;labelMode=0;xray=xrayT=scene.xray?1:0;lastViewKey='';focusGoal=null;resetView();syncButtons();});
     const legend = el('ol', 'sk-legend'); wrap.appendChild(legend);
     labeled.forEach((P) => {
       const li = el('li'); const i = el('i', '', String(P.no)); i.style.setProperty('--c', css(mixc(P.base, WHITE, 0.3)));
       li.style.setProperty('--tint', css(mixc(P.base, WHITE, 0.62)));
       li.appendChild(i); li.appendChild(document.createTextNode(P.label));
       li.addEventListener('click', () => { pinned = pinned === P ? null : P; showNote(P); });
-      legend.appendChild(li); P.li = li;
+      li.tabIndex=0;li.setAttribute('role','button');li.setAttribute('aria-label',P.label);li.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();pinned=pinned===P?null:P;showNote(P);}});legend.appendChild(li); P.li = li;
     });
     if (scene.caption) { const c = el('p', 'sk-sub', scene.caption); c.style.margin = '14px 4px 0'; wrap.appendChild(c); }
 
@@ -534,14 +549,16 @@ body{padding:8px 0 24px}
       if (key !== lastViewKey) { lastViewKey = key; bake(); camGoal = goal; focusGoal = goal.focus || null; }
     }
     const bake = () => { yaw += sway; sway = 0; swayAmp = 0; idle = 0; };
-    function setU(x) { const base = Math.floor(uAbs); uAbs = base + x; u = x; }
+    function togglePlay(){if(!playing){expl=expT=0;lastViewKey='';}playing=!playing;syncButtons();}
+    function setExplosion(value,immediate=false){playing=false;expT=clamp(Number(value)||0,0,1);if(immediate||reduce)expl=expT;labelMode=0;camGoal=null;focusGoal=null;zoom=view0.zoom;lastViewKey='';syncButtons();}
+    function setU(x) { playing=false;expl=expT=0;syncButtons(); const base = Math.floor(uAbs); uAbs = base + x; u = x; }
     function syncButtons() {
       document.documentElement.dataset.playing=String(playing);
       bPlay.firstChild.textContent = playing ? '暂停' : '播放'; bPlay.setAttribute('aria-pressed', String(!playing));
       bSpeed.firstChild.textContent = '速度 ' + SPEEDS[speedIx] + '×';
       if (bX) bX.setAttribute('aria-pressed', String(!!xrayT));
       if (bL) { bL.firstChild.textContent = ['标注：全部', '标注：当前', '标注：关'][labelMode]; }
-      if (bE) bE.setAttribute('aria-pressed', String(!!expT));
+      if (bE){bE.setAttribute('aria-pressed',String(expT>0));bE.firstChild.textContent=expT>0?'合拢':'一键爆炸';}expRange.value=String(Math.round(expl*100));expOutput.textContent=Math.round(expl*100)+'%';
     }
     syncButtons();
     function showNote(P) {
@@ -619,7 +636,7 @@ body{padding:8px 0 24px}
     /* —— 交互 —— */
     const ptrs = new Map(); let dragMoved = 0, pinch0 = 0, zoom0 = 1, mouse = null;
     cv.addEventListener('pointerdown', (e) => {
-      cv.setPointerCapture(e.pointerId); ptrs.set(e.pointerId, [e.clientX, e.clientY]); dragMoved = 0; bake(); vyaw = vpitch = 0; camGoal = null;
+      const r=stage.getBoundingClientRect();mouse=[e.clientX-r.left,e.clientY-r.top];cv.setPointerCapture(e.pointerId); ptrs.set(e.pointerId, [e.clientX, e.clientY]); dragMoved = 0; bake(); vyaw = vpitch = 0; camGoal = null;
       stage.classList.add('drag'); stage.focus({ preventScroll: true });
       if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; pinch0 = Math.hypot(a[0] - b[0], a[1] - b[1]); zoom0 = zoom; }
     });
@@ -641,10 +658,11 @@ body{padding:8px 0 24px}
     cv.addEventListener('wheel', (e) => { e.preventDefault(); zoom = clamp(zoom * Math.exp(-e.deltaY * 0.0012), 0.45, 3.2); idle = 0; }, { passive: false });
     stage.addEventListener('keydown', (e) => {
       const k = e.key.toLowerCase(); let hit = true;
-      if (k === ' ') { playing = !playing; }
+      if(e.altKey||e.ctrlKey||e.metaKey)return;
+      if (k === ' ') { togglePlay(); }
       else if (k === 'x' && bX) xrayT = xrayT ? 0 : 1;
       else if (k === 'l' && bL) labelMode = (labelMode + 1) % 3;
-      else if (k === 'e' && bE) expT = expT ? 0 : 1;
+      else if (k === 'e' && bE) setExplosion(expT>0?0:1);
       else if (k === 'r') resetView();
       else if (k === 'arrowright' && steps.length) { const i = (Math.max(0, stepAt(u)) + 1) % steps.length; setU(steps[i].from + 1e-4); }
       else if (k === 'arrowleft' && steps.length) { const i = (Math.max(0, stepAt(u)) - 1 + steps.length) % steps.length; setU(steps[i].from + 1e-4); }
@@ -710,7 +728,7 @@ body{padding:8px 0 24px}
       if (!onScreen) return;
       if (playing) { uAbs += (dt * SPEEDS[speedIx]) / cycle; u = uAbs - Math.floor(uAbs); }
       xray += (xrayT - xray) * Math.min(1, dt * 6); if (Math.abs(xray - xrayT) < 0.002) xray = xrayT;
-      expl += (expT - expl) * Math.min(1, dt * 4); if (Math.abs(expl - expT) < 0.002) expl = expT;
+      expl += (expT - expl) * (reduce?1:Math.min(1, dt * 8));expRange.value=String(Math.round(expl*100));expOutput.textContent=Math.round(expl*100)+'%';document.documentElement.dataset.explode=expl.toFixed(4); if (Math.abs(expl - expT) < 0.002) expl = expT;
       if (!ptrs.size && camGoal) {
         const k = Math.min(1, dt * 2.6), dy = ((camGoal.yaw - yaw) % 360 + 540) % 360 - 180;
         yaw += dy * k; pitch += (camGoal.pitch - pitch) * k; zoom += (camGoal.zoom - zoom) * k; idle = 0;
@@ -731,8 +749,9 @@ body{padding:8px 0 24px}
 
     function render(dt) {
       runAnim(u); worlds(expl); setupCamera();
-      const si = api.step, step = steps[si], active = new Set(step ? step.set : []);
-      wantView(si);
+      document.documentElement.dataset.transforms=JSON.stringify(Object.fromEntries(parts.map(P=>[P.id,P.W])));document.documentElement.dataset.selected=pinned?pinned.id:'';
+      const si = api.step, step = steps[si], active = new Set(expl>0?[]:step ? step.set : []);
+      if(expl===0&&expT===0)wantView(si);
       const focus = hoverPart || pinned;
       if (focus) active.add(focus);
       const anyActive = active.size > 0;
@@ -772,6 +791,7 @@ body{padding:8px 0 24px}
       }
       // 粒子流
       for (const F of flows) {
+        if(expl>0)continue;
         let target = F.always ? 1 : 0;
         if (step && step.flows && step.flows.includes(F.id)) target = 1;
         if (typeof F.on === 'function') target = F.on(u, api);
@@ -936,7 +956,7 @@ body{padding:8px 0 24px}
         L.el.classList.toggle('on', on && !!(api.step >= 0 || pinned === P || hoverPart === P));
         L.el.classList.toggle('dim', anyActive && !on && labelMode === 0);
         L.el.classList.toggle('off', !show);
-        if (P.li) P.li.classList.toggle('on', on);
+        if (P.li){P.li.classList.toggle('on',on);P.li.setAttribute('aria-pressed',String(pinned===P));}
         if (!show) { L.y = null; continue; }
         const c = ap(cam.V, ap(P.W, P.anchor)), q = proj(c);
         L.ax = q[0] / dpr; L.ay = q[1] / dpr;
@@ -1003,7 +1023,7 @@ body{padding:8px 0 24px}
     raf = requestAnimationFrame(frame);
     const ctl = {
       get u() { return u; }, setU, play(v = true) { playing = v; syncButtons(); },
-      xray(v = 1) { xrayT = v ? 1 : 0; xray = xrayT; syncButtons(); }, explode(v = 1) { expT = v ? 1 : 0; expl = expT; syncButtons(); },
+      xray(v = 1) { xrayT = v ? 1 : 0; xray = xrayT; syncButtons(); }, explode(v = 1) { setExplosion(v,true); },
       view(o) { bake(); if (o.yaw != null) yaw = o.yaw; if (o.pitch != null) pitch = o.pitch; if (o.zoom != null) zoom = o.zoom; idle = -1e9; },
       labels(m) { labelMode = m; syncButtons(); }, hover(id) { hoverPart = id ? byId[id] : null; },
       pin(id) { pinned = id ? byId[id] : null; if (pinned) showNote(pinned); },

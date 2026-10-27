@@ -7,9 +7,10 @@
   "scripts": {
     "validate": "node scripts/validate-static-site.mjs",
     "check:js": "node --check app.js",
-    "build": "python3 scripts/build-model.py && node scripts/validate-static-site.mjs && node scripts/verify-preview.mjs && node scripts/verify-gallery.mjs",
+    "build": "python3 scripts/build-model.py && node scripts/validate-static-site.mjs && node scripts/verify-preview.mjs && node scripts/verify-gallery.mjs && node scripts/verify-explosion.mjs",
     "verify:preview": "node scripts/verify-preview.mjs",
-    "verify:gallery": "node scripts/verify-gallery.mjs"
+    "verify:gallery": "node scripts/verify-gallery.mjs",
+    "verify:explosion": "node scripts/verify-explosion.mjs"
   },
   "license": "MIT"
 }
