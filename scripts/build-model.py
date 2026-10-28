@@ -1,10 +1,7 @@
 #!/usr/bin/env python3
-"""Publish the editable derivative of the user's Sketch3D nursing-bed source."""
+"""Build the active 2.1 model modules and progressive static site."""
 from pathlib import Path
+import runpy
 ROOT=Path(__file__).resolve().parents[1]
-SOURCE=ROOT/'model-source'
-html=(SOURCE/'nursing-bed.html').read_text()
-assert 'Sketch3D.mount' in html and 'id=\'explode-range\'' in html
-assert '未经实物核验' in html and 'fonts.googleapis.com' not in html
-(ROOT/'care-bed.html').write_text(html)
-print(f'Built care-bed.html: {len(html.encode()):,} bytes, user Sketch3D derivative; offline assets inlined')
+for name in ['build-sketch.py','build-site.py']:
+    runpy.run_path(str(ROOT/'scripts'/name),run_name='__main__')

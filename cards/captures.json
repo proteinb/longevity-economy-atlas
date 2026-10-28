@@ -1,0 +1,42 @@
+[
+  {
+    "id": "care-bed",
+    "url": "/care-bed.html?step=2&xr=0&play=0&labels=off&yaw=-24&pitch=17&zoom=1.1",
+    "clip": {
+      "height": 580,
+      "width": 760,
+      "x": 340,
+      "y": 922.125
+    }
+  },
+  {
+    "id": "smart-toilet",
+    "url": "/figures/smart-toilet.html?step=3&xr=1&play=0&labels=off&yaw=-45&pitch=22&zoom=0.95",
+    "clip": {
+      "height": 580,
+      "width": 760,
+      "x": 340,
+      "y": 922.125
+    }
+  },
+  {
+    "id": "smoke-alarm",
+    "url": "/figures/smoke-alarm.html?step=2&xr=1&play=0&labels=off&yaw=-28&pitch=-38&zoom=0.9",
+    "clip": {
+      "height": 580,
+      "width": 760,
+      "x": 340,
+      "y": 922.125
+    }
+  },
+  {
+    "id": "accessible-shower",
+    "url": "/figures/accessible-shower.html?step=1&xr=0&play=0&labels=off&yaw=-38&pitch=26&zoom=0.95",
+    "clip": {
+      "height": 580,
+      "width": 760,
+      "x": 340,
+      "y": 922.125
+    }
+  }
+]

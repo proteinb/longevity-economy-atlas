@@ -1,0 +1,21 @@
+{
+  "commit": "855e9ca15b30cae78d5a9349578e5da240a40295",
+  "files": {
+    "care-bed": {
+      "baseline_path": "model-source/nursing-bed.html",
+      "sha256": "cdabb5f7b825267ea56b516e864bb73f36bd2f1010e2486ede269b1bdb917cae"
+    },
+    "smart-toilet": {
+      "baseline_path": "figures/smart-toilet.html",
+      "sha256": "1527b3b277fb9d361a735e9eddb3e91f7e2ae812846c7607320d4853d7cecbf4"
+    },
+    "smoke-alarm": {
+      "baseline_path": "figures/smoke-alarm.html",
+      "sha256": "b2713fb46b5220507bf0dbb85980cb7b1646a7b84d99b00c4560b8aa978a95ca"
+    },
+    "accessible-shower": {
+      "baseline_path": "figures/accessible-shower.html",
+      "sha256": "bf4d0002d5eda707c5953f612877af16cace3b0a02fe0eed8933c5e1fe0c238e"
+    }
+  }
+}

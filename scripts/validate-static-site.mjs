@@ -73,3 +73,4 @@ if (failures.length > 0) {
 }
 
 console.log("长寿经济产业图谱自检通过：轻量交互页面、BioBAY、证据边界、贡献模板和 JS 语法均正常。");
+await import('./verify-v21.mjs');
