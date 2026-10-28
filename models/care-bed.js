@@ -1,5 +1,5 @@
 import {prepareScene} from "../semantic.js?v=ce520a6dc274";
-const EXTRA_CSS="\n      .sk{--cn:system-ui,-apple-system,\"PingFang SC\",\"Microsoft YaHei\",sans-serif;--hand:\"AgingHand\",\"AgingCaveat\",\"KaiTi\",cursive;color:#242936;background:#fff;padding:20px 16px;max-width:1200px}\n      .sk-title,.sk-sub,.sk-label,.sk-part-title{font-family:var(--hand)!important}\n      .sk-sub{font-size:15px;line-height:1.65;color:#59616b}\n      .sk-title{font-size:30px;line-height:1.3}.sk-fig{display:none}\n      .sk-stage{height:clamp(420px,52vw,620px);border:1px solid #9aa7af;border-radius:12px;background:#fff}\n      .sk-btn,.sk-step,.sk-pbtn{border:1px solid #65717b;border-radius:5px;box-shadow:2px 2px 0 #394552;font:14px/1.5 var(--cn);min-height:44px}\n      .sk button:disabled{opacity:.45;box-shadow:none;cursor:not-allowed}.sk button:focus-visible,.sk [role=button]:focus-visible,.sk input:focus-visible{outline:3px solid #284f73;outline-offset:3px}\n      .sk-readout{font:14px/1.4 ui-monospace,monospace;font-variant-numeric:tabular-nums}\n      .sk-caption{font:15px/1.75 var(--cn)}.sk-step.on,.sk-pbtn.on{box-shadow:2px 2px 0 #394552,inset 0 0 0 1px #394552}\n      .sk-part-name{display:none}.sk-part-panel{display:none}.sk.pins .sk-part-panel{display:block;margin:14px 0 20px}\n      .sk-part-title{font-size:16px;margin:0 0 8px}.sk.pins .sk-part-panel .sk-legend{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;columns:auto;margin:0;font-size:14px}\n      .sk-part-panel .sk-legend li{min-height:44px;padding:7px 5px;border:1px solid #d2d8da;white-space:normal;line-height:1.5}\n      .sk.compact .sk-part-name{display:block;position:absolute;left:8px;right:8px;top:8px;z-index:2;pointer-events:none;background:#fff9e9;border:1px solid #bbb49d;border-radius:5px;padding:7px 9px;font-size:14px;line-height:1.4}\n      .sk.compact .sk-stage{height:460px}.sk.compact .sk-readout{font-size:12px}.sk-hint{font:12px var(--cn)}\n      .nursing-explosion,.aging-explosion{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:16px 0 8px}.nursing-explosion input,.aging-explosion input{flex:1;min-width:80px;accent-color:#42697b}.nursing-explosion button,.aging-explosion button{background:#edf3f7;font-weight:650}.nursing-exp-note,.aging-explosion-note{font:12px/1.6 var(--cn);color:#58636a}\n      @media(prefers-reduced-motion:reduce){.sk *{animation:none!important;transition:none!important}}\n    ";
+const EXTRA_CSS="\n      .sk{--cn:system-ui,-apple-system,\"PingFang SC\",\"Microsoft YaHei\",sans-serif;--hand:\"AgingHand\",\"AgingCaveat\",\"KaiTi\",cursive;color:#242936;background:#fff;padding:20px 16px;max-width:1200px}\n      .sk-title,.sk-sub,.sk-label,.sk-part-title{font-family:var(--hand)!important}\n      .sk-sub{font-size:15px;line-height:1.65;color:#59616b}\n      .sk-title{font-size:30px;line-height:1.3}.sk-fig{display:none}\n      .sk-stage{height:clamp(420px,52vw,620px);border:1px solid #9aa7af;border-radius:12px;background:#fff}\n      .sk-btn,.sk-step,.sk-pbtn{border:1px solid #65717b;border-radius:5px;box-shadow:2px 2px 0 #394552;font:14px/1.5 var(--cn);min-height:44px}\n      .sk button:disabled{opacity:.45;box-shadow:none;cursor:not-allowed}.sk button:focus-visible,.sk [role=button]:focus-visible,.sk input:focus-visible{outline:3px solid #284f73;outline-offset:3px}\n      .sk-all-status{font:14px/1.6 var(--cn);margin:8px 0;min-height:1.6em;color:#43515d}.sk-all{font-weight:700;background:#f5f1d8;flex-shrink:0}.sk-all.on{background:#e6edd8}\n      .sk-readout{font:14px/1.4 ui-monospace,monospace;font-variant-numeric:tabular-nums}\n      .sk-caption{font:15px/1.75 var(--cn)}.sk-step.on,.sk-pbtn.on{box-shadow:2px 2px 0 #394552,inset 0 0 0 1px #394552}\n      .sk-part-name{display:none}.sk-part-panel{display:none}.sk.pins .sk-part-panel{display:block;margin:14px 0 20px}\n      .sk-part-title{font-size:16px;margin:0 0 8px}.sk.pins .sk-part-panel .sk-legend{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;columns:auto;margin:0;font-size:14px}\n      .sk-part-panel .sk-legend li{min-height:44px;padding:7px 5px;border:1px solid #d2d8da;white-space:normal;line-height:1.5}\n      .sk.compact .sk-part-name{display:block;position:absolute;left:8px;right:8px;top:8px;z-index:2;pointer-events:none;background:#fff9e9;border:1px solid #bbb49d;border-radius:5px;padding:7px 9px;font-size:14px;line-height:1.4}\n      .sk.compact .sk-stage{height:460px}.sk.compact .sk-readout{font-size:12px}.sk-hint{font:12px var(--cn)}\n      .nursing-explosion,.aging-explosion{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:16px 0 8px}.nursing-explosion input,.aging-explosion input{flex:1;min-width:80px;accent-color:#42697b}.nursing-explosion button,.aging-explosion button{background:#edf3f7;font-weight:650}.nursing-exp-note,.aging-explosion-note{font:12px/1.6 var(--cn);color:#58636a}\n      @media(prefers-reduced-motion:reduce){.sk *{animation:none!important;transition:none!important}}\n    ";
 const localRoot={};
 
 /*! Sketch3D · 白底彩色手绘 3D 解剖图引擎 · 零依赖 · MIT
@@ -487,9 +487,11 @@ const localRoot={};
     });
 
     // 时间轴
+    let allPlayback=false,allFinished=false;const allButtons=[];const allStatus=el('p','sk-all-status');allStatus.setAttribute('role','status');allStatus.id='all-play-status';const addAll=row=>{const b=el('button','sk-step sk-all','全选');b.type='button';b.title='从第一步顺序播放全部步骤，完成后停止';b.setAttribute('aria-describedby','all-play-status');b.addEventListener('click',startAll);row.appendChild(b);allButtons.push(b);};
     let chips = [], knob = null;
     if (steps.length) {
       const tl = el('div', 'sk-timeline'), row = el('div', 'sk-steps'), bar = el('div', 'sk-bar');
+      addAll(row);
       steps.forEach((s, i) => {
         const b = el('button', 'sk-step'); b.type = 'button';
         b.style.setProperty('--tint', css(mixc(s.c, WHITE, 0.55))); b.style.setProperty('--glow', css(s.c, 0.3));
@@ -516,6 +518,7 @@ const localRoot={};
         needs: b.needs != null ? [].concat(b.needs) : scene.order === 'free' || i === 0 ? [] : [(scene.buttons[i - 1] && scene.buttons[i - 1].id) || 'b' + i] };
     });
     const pRow = el('div', 'sk-pbtns');
+    addAll(pRow);
     pbs.forEach((b) => {
       const e = el('button', 'sk-pbtn'); e.type = 'button';
       e.style.setProperty('--tint', css(mixc(b.c, WHITE, 0.55))); e.style.setProperty('--glow', css(b.c, 0.35));
@@ -526,6 +529,7 @@ const localRoot={};
     const toastEl = el('div', 'sk-toast'); toastEl.hidden = true; stage.appendChild(toastEl);
     let toastT = 0;
     function toast(msg) { toastEl.textContent = msg; toastEl.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => { toastEl.hidden = true; }, 2600); }
+    wrap.appendChild(allStatus);
     const caption = el('div', 'sk-caption'); caption.setAttribute('aria-live', 'polite'); wrap.appendChild(caption);
 
     // 按钮
@@ -545,7 +549,7 @@ const localRoot={};
     if(bE){bE.id='explode';explosionBar.appendChild(bE);}explosionBar.appendChild(expLabel);explosionBar.appendChild(expRange);explosionBar.appendChild(expOutput);wrap.insertBefore(explosionBar,stage);
     const expNote=el('p','nursing-exp-note','概念拆解；展开暂停动作，播放或选步骤先合拢。');wrap.insertBefore(expNote,stage);expRange.addEventListener('input',()=>setExplosion(Number(expRange.value)/100,true));
     btn('缩小','',()=>{zoom=clamp(zoom/1.15,.45,3.2);camGoal=null;});btn('放大','',()=>{zoom=clamp(zoom*1.15,.45,3.2);camGoal=null;});
-    btn('复位模型','',()=>{expl=expT=0;labelMode=0;xray=xrayT=0;focusGoal=null;camLock=false;lastViewKey='';setMode('buttons');resetView();syncButtons();});
+    btn('复位模型','',()=>{cancelAll();expl=expT=0;labelMode=0;xray=xrayT=0;focusGoal=null;camLock=false;lastViewKey='';setMode('buttons');resetView();syncButtons();});
     const partPanel=el('section','sk-part-panel');partPanel.setAttribute('aria-label','部件名称');
     partPanel.appendChild(el('p','sk-part-title','部件名称 · 点编号或名称查看'));
     const legend = el('ol', 'sk-legend');partPanel.appendChild(legend);wrap.insertBefore(partPanel,stage.nextSibling);
@@ -582,10 +586,42 @@ const localRoot={};
       if (key !== lastViewKey) { lastViewKey = key; bake(); camGoal = goal; focusGoal = goal.focus || null; }
     }
     const bake = () => { yaw += sway; sway = 0; swayAmp = 0; idle = 0; };
+// Inlined by build-sketch.py into each instance; driven only by its existing RAF.
+function cancelAll(){
+  if(allPlayback)playing=false;
+  allPlayback=false;allFinished=false;syncAll();
+}
+function syncAll(){
+  wrap.dataset.allPlayback=String(allPlayback);wrap.dataset.allFinished=String(allFinished);
+  for(const b of allButtons){b.setAttribute('aria-pressed',String(allPlayback));b.classList.toggle('on',allPlayback);}
+  allStatus.textContent=allFinished?'全部步骤已播放。':allPlayback?(playing?'正在按顺序播放全部步骤。':'全部步骤已暂停；点继续可接着播放。'):'';
+}
+function startAll(){
+  if(!steps.length)return;
+  allPlayback=true;allFinished=false;playing=true;u=uAbs=steps[0].from;
+  expl=expT=0;viewHold=false;camGoal=null;focusGoal=null;lastViewKey='';lastStep=-2;pinned=null;
+  if(pbs.length){mode='buttons';done.clear();curSeg=pbs[0];}
+  syncButtons();
+}
+function advanceAll(dt){
+  if(!allPlayback||!playing)return;
+  const previous=pbs.length?curSeg:null;
+  uAbs=Math.min(.9999,uAbs+(dt*SPEEDS[speedIx])/cycle);u=uAbs;
+  if(pbs.length){
+    for(const b of pbs)if(u>=b.to)done.add(b.id);
+    curSeg=pbs.find(b=>u>=b.from&&u<b.to)||null;
+  }
+  if(uAbs>=.9999){
+    u=uAbs=.9999;playing=false;allPlayback=false;allFinished=true;
+    if(pbs.length){pbs.forEach(b=>done.add(b.id));curSeg=null;}
+  }
+  if(!playing||(pbs.length&&previous!==curSeg))syncButtons();
+}
+
     function togglePlay(){if(!playing){expl=expT=0;lastViewKey='';}playing=!playing;syncButtons();}
-    function setExplosion(value,immediate=false){playing=false;expT=clamp(Number(value)||0,0,1);if(immediate||reduce)expl=expT;labelMode=0;camGoal=null;focusGoal=null;zoom=view0.zoom;lastViewKey='';syncButtons();}
-    function setU(x) {viewHold=false; expl=expT=0; const base = Math.floor(uAbs); uAbs = base + x; u = x; }
-    function syncButtons() {
+    function setExplosion(value,immediate=false){cancelAll();playing=false;expT=clamp(Number(value)||0,0,1);if(immediate||reduce)expl=expT;labelMode=0;camGoal=null;focusGoal=null;zoom=view0.zoom;lastViewKey='';syncButtons();}
+    function setU(x) {cancelAll();viewHold=false; expl=expT=0; const base = Math.floor(uAbs); uAbs = base + x; u = x; }
+    function syncButtons() {syncAll();
       wrap.dataset.playing=String(playing);wrap.dataset.mode=mode;wrap.dataset.segment=curSeg?curSeg.id:'';wrap.dataset.done=[...done].join(',');
       bPlay.firstChild.textContent = playing ? '暂停' : mode === 'buttons' ? '继续' : '播放'; bPlay.setAttribute('aria-pressed', String(!playing));bPlay.disabled=mode==='buttons'&&!curSeg;if(bPlay.disabled)bPlay.firstChild.textContent='先选步骤';
       if (bMode) bMode.firstChild.textContent = mode === 'buttons' ? '模式：按钮' : '模式：自动循环';
@@ -603,7 +639,7 @@ const localRoot={};
       if (bL) { bL.firstChild.textContent = ['标注：全部', '标注：当前', '标注：关'][labelMode]; }
       if(bE){bE.setAttribute('aria-pressed',String(expT>0));bE.firstChild.textContent=expT>0?'合拢':'一键爆炸';}expRange.value=String(Math.round(expl*100));expOutput.textContent=Math.round(expl*100)+'%';
     }
-    function setMode(m) { expl=expT=0;
+    function setMode(m) {cancelAll(); expl=expT=0;
       mode = m; curSeg = null; done.clear(); pinned = null; lastStep = -2;
       if (m === 'buttons') { uAbs = u = 0; playing = false; } else playing = !reduce;
       syncButtons();
@@ -616,7 +652,7 @@ const localRoot={};
       b.el.classList.remove('shake'); void b.el.offsetWidth; b.el.classList.add('shake');
       return false;
     }
-    function press(k, instant) {
+    function press(k, instant) {cancelAll();
       const b = typeof k === 'number' ? pbs[k - 1] : pbs.find((x) => x.id === k || x.label === k);
       if (!b) return false;
       if (mode !== 'buttons') setMode('buttons');
@@ -797,7 +833,8 @@ const localRoot={};
       raf = 0;
       const dt = Math.min(0.05, (now - last) / 1000); last = now;
       if (!onScreen||destroyed) return;
-      if (playing && mode === 'buttons') {
+      if(allPlayback) advanceAll(dt);
+      else if (playing && mode === 'buttons') {
         const end = curSeg ? curSeg.to - 1e-4 : 0.9999;
         uAbs = Math.min(end, uAbs + (dt * SPEEDS[speedIx]) / cycle); u = uAbs;
         if (uAbs >= end) { playing = false; if (curSeg) { done.add(curSeg.id); curSeg = null; if (done.size === pbs.length) toast('全部完成 · 点“重来”再来一遍'); } syncButtons(); }
@@ -1187,13 +1224,13 @@ const localRoot={};
     /* —— URL 参数定位状态：?xr=1&step=3&u=0.4&yaw=200&pitch=40&zoom=2&focus=piston&explode=1&labels=2&press=1,2&mode=buttons&play=0&audit=1 —— */
     raf = requestAnimationFrame(frame);
     const ctl = {
-      snapshot(){ return JSON.parse(JSON.stringify({u,uAbs,expl,expT,yaw,pitch,zoom,xray,xrayT,labelMode,selected:pinned?.id||null,playing,speedIx,focusGoal,focusCur,viewHold,mode,done:[...done],segment:curSeg?.id||null})); },
-      restore(s){ playing=false;u=s.u;uAbs=s.uAbs;expl=s.expl;expT=s.expT;yaw=s.yaw;pitch=s.pitch;zoom=s.zoom;xray=s.xray;xrayT=s.xrayT;labelMode=s.labelMode;speedIx=s.speedIx;pinned=byId[s.selected]||null;focusGoal=s.focusGoal;focusCur=s.focusCur;camGoal=null;vyaw=vpitch=0;sway=0;viewHold=true;mode=s.mode;done.clear();s.done.forEach(x=>done.add(x));curSeg=pbs.find(x=>x.id===s.segment)||null;lastStep=-2;if(pinned)showNote(pinned);syncButtons(); },
+      snapshot(){ return JSON.parse(JSON.stringify({u,uAbs,expl,expT,yaw,pitch,zoom,xray,xrayT,labelMode,selected:pinned?.id||null,playing,allPlayback,allFinished,speedIx,focusGoal,focusCur,viewHold,mode,done:[...done],segment:curSeg?.id||null})); },
+      restore(s){ playing=false;allPlayback=!!s.allPlayback;allFinished=!!s.allFinished;u=s.u;uAbs=s.uAbs;expl=s.expl;expT=s.expT;yaw=s.yaw;pitch=s.pitch;zoom=s.zoom;xray=s.xray;xrayT=s.xrayT;labelMode=s.labelMode;speedIx=s.speedIx;pinned=byId[s.selected]||null;focusGoal=s.focusGoal;focusCur=s.focusCur;camGoal=null;vyaw=vpitch=0;sway=0;viewHold=true;mode=s.mode;done.clear();s.done.forEach(x=>done.add(x));curSeg=pbs.find(x=>x.id===s.segment)||null;lastStep=-2;if(pinned)showNote(pinned);syncButtons(); },
       step(n){ const s=steps[Number(n)-1];if(!s)return false;playing=false;setU(s.from+(s.to-s.from)*.45);curSeg=pbs.find(b=>u>=b.from&&u<b.to)||null;lastStep=-2;syncButtons();return true; },
       inspect({part,step,xray:inside=true}){this.step(step||1);playing=false;expl=expT=0;xray=xrayT=inside?1:0;labelMode=0;runAnim(u);worlds(0);pinned=byId[part]||null;viewHold=true;camGoal=null;bake();if(pinned){focusGoal=ap(pinned.W,pinned.anchor);focusCur=focusGoal.slice();zoom=Math.min(view0.zoom*1.35,1.8);showNote(pinned);}syncButtons();},
       query(params){const get=k=>params.get(k);if(get('step'))this.step(Number(get('step')));if(params.has('xr'))this.xray(Number(get('xr')));if(params.has('explode'))this.explode(clamp(Number(get('explode'))||0,0,1));if(params.has('labels'))this.labels(get('labels')==='off'?2:get('labels')==='all'?0:1);const v={};for(const k of ['yaw','pitch','zoom'])if(params.has(k)&&Number.isFinite(Number(get(k))))v[k]=Number(get(k));if(Object.keys(v).length)this.view(v);if(params.has('play'))this.play(get('play')==='1'&&!reduce);if(get('audit')==='1')return this.audit();},
       audit(o){const wasPlaying=playing;playing=false;const result=audit(o);playing=wasPlaying;wrap.dataset.audit=JSON.stringify(result);return result;},
-      destroy(){if(destroyed)return;destroyed=true;playing=false;cancelAnimationFrame(raf);sizeObserver.disconnect();document.removeEventListener('visibilitychange',visibilityHandler);lifecycle.abort();clearTimeout(toastT);host.replaceChildren();},
+      destroy(){if(destroyed)return;destroyed=true;cancelAll();playing=false;cancelAnimationFrame(raf);sizeObserver.disconnect();document.removeEventListener('visibilitychange',visibilityHandler);lifecycle.abort();clearTimeout(toastT);host.replaceChildren();},
 
       get u() { return u; }, setU, play(v = true) {if(v&&mode==='buttons'&&!curSeg){const next=pbs.find(b=>!done.has(b.id)&&b.needs.every(n=>done.has(n)));if(next)press(next.id,reduce);else playing=false;}else playing=v;syncButtons();},
       xray(v = 1) { xrayT = v ? 1 : 0; xray = xrayT; syncButtons(); }, explode(v = 1) { setExplosion(v,true); },
