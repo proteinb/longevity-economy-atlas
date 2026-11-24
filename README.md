@@ -2,7 +2,15 @@
 
 ## AgingBuy 2.1 产品图鉴
 
-首页为四款实际模型截图组成的静态图鉴卡；只有详情启动一个直接挂载的 Sketch3D 实例。旧产业图谱与研究内容保留在 `atlas.html` 及原文档。`python3 scripts/build-model.py` 从 `model-source/sketch/`、`semantic.js`、`content/products.json` 构建页面与模块；`npm run validate` 检查原资料和 2.1 的几何、状态、生命周期等行为。源文件与接口说明见 `model-source/README.md`，2.1 计划见 `docs/superpowers/plans/2026-10-28-agingbuy-2.1.md`。
+首页以模型截图展示产品图鉴，每个详情页按需挂载一个 Sketch3D 实例。五个图解共用 [`engine.js`](./engine.js)，包括制氧机。旧产业图谱与研究资料保留在 `atlas.html` 及原文档。
+
+### 接入新产品图解
+
+1. 在 `model-source/sketch/<id>.js` 导出 `makeScene(S, M)`。用引擎提供的 `S` 和 `M` 描述部件、步骤、视角和动画数据。以 [制氧机场景](./model-source/sketch/oxygen-concentrator.js) 为例。
+2. 在 `content/products.json` 添加同一 `id` 的产品条目，并放入 `cards/<id>.png`。条目中的定位点引用场景的部件 ID 和从 1 开始的步骤编号。
+3. 运行 `python3 scripts/build-model.py` 和 `npm run validate`。生成的 `models/<id>.js` 会从 `../engine.js` 导入 `defineModel`，由它提供 `createScene()` 和 `mount(host)`。构建同时生成首页入口、静态详情和产品导航。
+
+渲染、播放、事件和审计逻辑集中在共享引擎，产品模块只提供模型数据和入口绑定。更多约定见 [模型源文件说明](./model-source/README.md)。
 
 未提供原链接、型号或正式条款的资料保留“待核”状态。动画、颜色与读数是教学示意，不构成真实产品认证。字体为已核 OFL 的本地子集，许可与缺字回退见 `licenses/fonts/README.md`。
 

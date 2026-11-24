@@ -1,0 +1,1 @@
+`earcut.js` is the unmodified ES module source of [Earcut 3.0.2](https://github.com/mapbox/earcut/tree/v3.0.2). It triangulates the moving figure's polygon faces, including faces with holes. License in [earcut-ISC.txt](../licenses/earcut-ISC.txt).
