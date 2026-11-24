@@ -117,7 +117,7 @@ export const makeScene = (S, M) => {
       const x = k === 'A' ? BED_A : BED_B;
       return [
         P_('bed' + k, { role: 'inside', in: 'housing', glass: true, mesh: bedMesh, at: [x, SHELF_Y + BED_H / 2, BED_Z], color: C.steel, group: 'bed' + k,
-          label: k === 'A' ? '分子筛塔' : undefined, name: k + ' 塔', anchor: [-BED_R, 8, 0],
+          label: k + ' 塔分子筛', name: k + ' 塔', anchor: [-BED_R, 8, 0],
           note: '铝管里装满沸石分子筛颗粒（常用 13X 或锂分子筛）。加压时它把空气里的氮气吸住，让氧气通过；降压时再把氮气放掉。' }),
         P_('n2' + k, { role: 'inside', in: 'housing', mesh: S.cyl(BED_R - 0.4, 1, { seg: 22 }), at: [x, ZEO_Y0, BED_Z], color: C.n2, hatch: false, group: 'bed' + k, name: k + ' 塔：已吸满氮气的分子筛',
           note: '深色这段已经吸满了氮气。进气时它往上长，要在“穿透”到塔顶之前切换，否则氮气会混进氧气里。' }),

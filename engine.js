@@ -1363,6 +1363,32 @@ function mountScene(host, scene, { auditGeometry = false, qualifyNotes = false }
     paint.set('fillStyle', g); ctx.beginPath(); ctx.arc(it.q[0], it.q[1], it.r * 2.2, 0, TAU); ctx.fill();
   }
 
+  function layoutExplodedPins(pins) {
+    const spacing = 24; // 22px pins with room for their borders.
+    const placed = [];
+    const isFree = (x, y) => !placed.some(pin =>
+      Math.abs(pin.x - x) < spacing && Math.abs(pin.y - y) < spacing);
+
+    for (const pin of pins) {
+      const anchorX = clamp(pin.ax - 11, 4, W - 26);
+      const anchorY = clamp(pin.ay - 11, 4, H - 30);
+      let bestX = anchorX, bestY = anchorY;
+      if (!isFree(anchorX, anchorY)) {
+        let bestDistance = Infinity;
+        for (let y = 4; y <= H - 30; y += spacing) {
+          for (let x = 4; x <= W - 26; x += spacing) {
+            const distance = (x - anchorX) ** 2 + (y - anchorY) ** 2;
+            if (distance >= bestDistance || !isFree(x, y)) continue;
+            bestX = x; bestY = y; bestDistance = distance;
+          }
+        }
+      }
+      pin.x = bestX; pin.y = bestY;
+      pin.el.style.transform = `translate(${bestX.toFixed(1)}px,${bestY.toFixed(1)}px)`;
+      placed.push(pin);
+    }
+  }
+
   /* —— 标签布局：左右两列，按锚点高度排开，铅笔引线 —— */
   function layoutLabels(active, anyActive, dt) {
     const k = Math.min(1, dt * 12), cols = [[], []], center = cam.cx / dpr, pins = [];
@@ -1377,17 +1403,23 @@ function mountScene(host, scene, { auditGeometry = false, qualifyNotes = false }
       const c = ap(cam.V, ap(P.W, P.anchor)), q = proj(c);
       L.ax = q[0] / dpr; L.ay = q[1] / dpr;
       if (pinMode) {
+        pins.push(L);
+        if (expl > 0) continue;
         const x = L.ax - 11, y = L.ay - 11;
         const priorX = L.x, priorY = L.y;
         L.x = priorX == null ? x : priorX + (x - priorX) * k;
         L.y = priorY == null ? y : priorY + (y - priorY) * k;
         L.priorX = priorX; L.priorY = priorY;
-        pins.push(L); continue;
+        continue;
       }
       if (!L.side || Math.abs(L.ax - center) > 14) L.side = L.ax < center ? -1 : 1;
       cols[L.side < 0 ? 0 : 1].push(P);
     }
     if (pinMode) {
+      if (expl > 0) {
+        layoutExplodedPins(pins);
+        return;
+      }
       for (let it = 0; it < 6; it++) for (let i = 0; i < pins.length; i++) for (let j = i + 1; j < pins.length; j++) {
         const A = pins[i], Bp = pins[j], dx = Bp.x - A.x, dy = Bp.y - A.y, d = Math.hypot(dx, dy) || 0.01;
         if (d < 24) { const m = (24 - d) / 2, ux = d > 0.02 ? dx / d : 1, uy = d > 0.02 ? dy / d : 0; A.x -= ux * m; A.y -= uy * m; Bp.x += ux * m; Bp.y += uy * m; }

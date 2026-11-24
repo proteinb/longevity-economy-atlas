@@ -43,11 +43,11 @@
     "id": "oxygen-concentrator",
     "url": "/figures/oxygen-concentrator.html?step=2&xr=1&play=0&labels=off&yaw=-29&pitch=14&zoom=1.1",
     "clip": {
-      "x": 220,
-      "y": 859,
-      "width": 1000,
-      "height": 620
+      "x": 340,
+      "y": 879,
+      "width": 760,
+      "height": 580
     },
-    "capture": "canvas pixels"
+    "capture": "canvas pixels, indexed PNG"
   }
 ]

@@ -19,7 +19,9 @@ def read_scene(product_id):
         declaration = re.search(r'^export\s+const\s+makeScene\s*=\s*', text, re.M)
         if not declaration:
             raise ValueError(f'{source} must export a makeScene factory')
-        return text[declaration.end():].strip().removesuffix(';'), {}
+        offsets = source.with_suffix('.explode.json')
+        options = {'explodeOffsets': json.loads(offsets.read_text())} if offsets.exists() else {}
+        return text[declaration.end():].strip().removesuffix(';'), options
 
     # The reference HTMLs are kept for comparison with the reviewed original scenes.
     html = (MODEL_SOURCES / f'{product_id}.html').read_text()
