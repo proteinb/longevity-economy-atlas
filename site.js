@@ -1,5 +1,5 @@
 const revision=new URL(import.meta.url).searchParams.get('v')||'2.1';
-import {products} from './catalog.js?v=e786e3053af7';
+import {products} from './catalog.js?v=fb5bc59badba';
 const main=document.querySelector('main');let controller=null,generation=0,templates=null,saved=null,current=null;
 const originalHome=location.pathname==='/'||location.pathname.endsWith('/index.html')?main.innerHTML:null;
 function cleanup(){generation++;controller?.destroy();controller=null;saved=null;}
