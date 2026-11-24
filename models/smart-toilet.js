@@ -1327,7 +1327,7 @@ function advanceAll(dt){
         if (params.get('focus')) {
           runAnim(u); worlds(expl);
           const value = params.get('focus'), coords = value.split(',').map(Number);
-          const part = byId[value] || parts.find(P => P.label === value);
+          const part = Object.hasOwn(byId, value) ? byId[value] : parts.find(P => P.label === value);
           if (coords.length === 3 && coords.every(Number.isFinite)) focusGoal = coords;
           else if (part) focusGoal = ap(part.W, part.anchor);
           if (focusGoal) { focusCur = focusGoal.slice(); viewHold = true; }
