@@ -2,28 +2,80 @@
 """Compile reviewed, canonical Sketch3D sources to directly mounted ES modules.
 No mesh or kinematics rewriting: scene bodies are copied verbatim.
 """
-import re,json,hashlib
+import re,json,hashlib,runpy
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
-IDS=['care-bed','smart-toilet','smoke-alarm','accessible-shower']
+IDS=[product['id'] for product in json.loads((ROOT/'content/products.json').read_text())]
+optimize=runpy.run_path(str(ROOT/'scripts/sketch-performance.py'))['optimize']
+MOTION_HASH=hashlib.sha256((ROOT/'motion-renderer.js').read_bytes()).hexdigest()[:12]
+ENGINE_HASH=hashlib.sha256((ROOT/'engine.js').read_bytes()).hexdigest()[:12]
 SEMANTIC_HASH=hashlib.sha256((ROOT/'semantic.js').read_bytes()).hexdigest()[:12]
 API=r'''
-      snapshot(){ return JSON.parse(JSON.stringify({u,uAbs,expl,expT,yaw,pitch,zoom,xray,xrayT,labelMode,selected:pinned?.id||null,playing,allPlayback,allFinished,speedIx,focusGoal,focusCur,viewHold,EXTRA_STATE})); },
+      snapshot(){ invalidate(); return JSON.parse(JSON.stringify({u,uAbs,expl,expT,yaw,pitch,zoom,xray,xrayT,labelMode,selected:pinned?.id||null,playing,allPlayback,allFinished,speedIx,focusGoal,focusCur,viewHold,EXTRA_STATE})); },
       restore(s){ playing=false;allPlayback=!!s.allPlayback;allFinished=!!s.allFinished;u=s.u;uAbs=s.uAbs;expl=s.expl;expT=s.expT;yaw=s.yaw;pitch=s.pitch;zoom=s.zoom;xray=s.xray;xrayT=s.xrayT;labelMode=s.labelMode;speedIx=s.speedIx;pinned=byId[s.selected]||null;focusGoal=s.focusGoal;focusCur=s.focusCur;camGoal=null;vyaw=vpitch=0;sway=0;viewHold=true;RESTORE_EXTRA;lastStep=-2;if(pinned)showNote(pinned);syncButtons(); },
-      step(n){ const s=steps[Number(n)-1];if(!s)return false;playing=false;setU(s.from+(s.to-s.from)*.45);STEP_EXTRA;lastStep=-2;syncButtons();return true; },
+      step(n){ invalidate(); const s=steps[Number(n)-1];if(!s)return false;playing=false;setU(s.from+(s.to-s.from)*.45);STEP_EXTRA;lastStep=-2;syncButtons();return true; },
       inspect({part,step,xray:inside=true}){this.step(step||1);playing=false;expl=expT=0;xray=xrayT=inside?1:0;labelMode=0;runAnim(u);worlds(0);pinned=byId[part]||null;viewHold=true;camGoal=null;bake();if(pinned){focusGoal=ap(pinned.W,pinned.anchor);focusCur=focusGoal.slice();zoom=Math.min(view0.zoom*1.35,1.8);showNote(pinned);}syncButtons();},
-      query(params){const get=k=>params.get(k);if(get('step'))this.step(Number(get('step')));if(params.has('xr'))this.xray(Number(get('xr')));if(params.has('explode'))this.explode(clamp(Number(get('explode'))||0,0,1));if(params.has('labels'))this.labels(get('labels')==='off'?2:get('labels')==='all'?0:1);const v={};for(const k of ['yaw','pitch','zoom'])if(params.has(k)&&Number.isFinite(Number(get(k))))v[k]=Number(get(k));if(Object.keys(v).length)this.view(v);if(params.has('play'))this.play(get('play')==='1'&&!reduce);if(get('audit')==='1')return this.audit();},
-      audit(o){const wasPlaying=playing;playing=false;const result=RUN_AUDIT;playing=wasPlaying;wrap.dataset.audit=JSON.stringify(result);return result;},
+      query(params) {
+        const number = key => {
+          const value = params.get(key);
+          return value !== null && value.trim() !== '' && Number.isFinite(Number(value)) ? Number(value) : null;
+        };
+        const modeValue = params.get('mode');
+        if (modeValue === 'auto' || modeValue === 'buttons') this.mode?.(modeValue);
+        QUERY_PRESS
+        if (number('step') !== null) this.step(number('step'));
+        if (number('u') !== null) { playing = false; setU(clamp(number('u'), 0, 0.9999)); }
+        if (number('xr') !== null) this.xray(number('xr'));
+        if (number('explode') !== null) this.explode(clamp(number('explode'), 0, 1));
+        const labels = { off: 2, all: 0, step: 1, 0: 2, 1: 1, 2: 1 };
+        if (Object.hasOwn(labels, params.get('labels'))) this.labels(labels[params.get('labels')]);
+        const view = {};
+        for (const key of ['yaw', 'pitch', 'zoom']) if (number(key) !== null) view[key] = number(key);
+        if (params.get('focus')) {
+          runAnim(u); worlds(expl);
+          const value = params.get('focus'), coords = value.split(',').map(Number);
+          const part = byId[value] || parts.find(P => P.label === value);
+          if (coords.length === 3 && coords.every(Number.isFinite)) focusGoal = coords;
+          else if (part) focusGoal = ap(part.W, part.anchor);
+          if (focusGoal) { focusCur = focusGoal.slice(); viewHold = true; }
+        }
+        if (Object.keys(view).length) this.view(view);
+        syncButtons();
+        if (params.has('play')) this.play(params.get('play') === '1' && !reduce);
+        if (params.get('audit') === '1') { liveDiagnostics = true; return this.audit(); }
+        runAnim(u); worlds(expl); publishDiagnostics();
+        diagnosticsPending = true;
+        invalidate();
+      },
+      audit(o){
+        const wasPlaying = playing;
+        playing = false;
+        let result;
+        try { result = RUN_AUDIT; }
+        finally { playing = wasPlaying; }
+        wrap.dataset.audit = JSON.stringify(result);
+        publishDiagnostics();
+        diagnosticsPending = true;
+        invalidate();
+        return result;
+      },
       destroy(){if(destroyed)return;destroyed=true;cancelAll();playing=false;cancelAnimationFrame(raf);sizeObserver.disconnect();document.removeEventListener('visibilitychange',visibilityHandler);lifecycle.abort();DESTROY_EXTRA;host.replaceChildren();},
 '''
 GENERIC_AUDIT=r'''(()=>{const problems=[],warnings=['仅检查部件 ID、父级与动画变换有限值；缺少制造装配约束，不检查承载、碰撞和安全。'];const ids=new Set();for(const p of parts){if(ids.has(p.id))problems.push('重复 ID '+p.id);ids.add(p.id);if(p.def.parent&&!byId[p.def.parent])problems.push('父级不存在 '+p.id);}const keep=u;let checks=0;for(let i=0;i<=16;i++){runAnim(i/16);worlds(0);for(const p of parts){checks++;if(!p.W.every(Number.isFinite))problems.push('变换无效 '+p.id);}}runAnim(keep);worlds(expl);return {ok:!problems.length,checks,problems,warnings,scope:'ID、父级和17姿态有限值；非结构复验'};})()'''
 for ident in IDS:
-    html=(ROOT/'model-source/sketch'/f'{ident}.html').read_text()
+    sketch_dir=ROOT/'model-source/sketch'
+    scene_file=sketch_dir/f'{ident}.js'
+    # Scene-only inputs use the generic Sketch3D template.
+    html=(sketch_dir/('smart-toilet.html' if scene_file.exists() else f'{ident}.html')).read_text()
     scripts=re.findall(r'<script[^>]*>([\s\S]*?)</script>',html)
     engine=next(s for s in scripts if 'root.Sketch3D =' in s)
     scene=next(s for s in scripts if "\nSketch3D.mount('#app'" in s)
     scene=scene[scene.index("Sketch3D.mount('#app', ")+len("Sketch3D.mount('#app', "):].strip()
     assert scene.endswith(');');scene=scene[:-2]
+    if scene_file.exists():
+        scene=scene_file.read_text().split('export const makeScene = ',1)[1].strip().removesuffix(';')
+        engine=re.sub(r'const explodeVectors=\{[^;]+\};','const explodeVectors={};',engine)
+        engine=engine.replace('    expRange.addEventListener', '    explosionBar.hidden=expNote.hidden=!hasExplode;\n    expRange.addEventListener')
     # Per-instance styles and lifetime. No global last-controller or iframe bridge.
     engine=engine.replace('    injectCSS();','    let destroyed=false,viewHold=false;const lifecycle=new AbortController();')
     engine=engine.replace("const wrap = el('div', 'sk'); host.appendChild(wrap);","const wrap = el('div', 'sk'); host.appendChild(wrap);const sheet=document.createElement('style');sheet.textContent=CSS+EXTRA_CSS;host.appendChild(sheet);")
@@ -63,7 +115,10 @@ for ident in IDS:
     engine=engine.replace('    function syncButtons() {','    function syncButtons() {syncAll();')
     engine=engine.replace("      if (playing && mode === 'buttons') {", "      if(allPlayback) advanceAll(dt);\n      else if (playing && mode === 'buttons') {")
     if ident!='care-bed':engine=engine.replace('      if (playing) { uAbs +=', '      if(allPlayback) advanceAll(dt);\n      else if (playing) { uAbs +=',1)
-    extra=API.replace('RUN_AUDIT','audit(o)' if ident=='care-bed' else GENERIC_AUDIT)
+    query_press="""for (const key of (params.get('press') || '').split(',').filter(Boolean)) {
+          press(Number.isFinite(Number(key)) ? Number(key) : key, true);
+        }""" if ident=='care-bed' else ''
+    extra=API.replace('        QUERY_PRESS\n', '        '+query_press+'\n' if query_press else '').replace('RUN_AUDIT','audit(o)' if ident=='care-bed' else GENERIC_AUDIT)
     extra=extra.replace('EXTRA_STATE',"mode,done:[...done],segment:curSeg?.id||null" if ident=='care-bed' else "mode:'auto'")
     extra=extra.replace('RESTORE_EXTRA',"mode=s.mode;done.clear();s.done.forEach(x=>done.add(x));curSeg=pbs.find(x=>x.id===s.segment)||null" if ident=='care-bed' else '')
     extra=extra.replace('STEP_EXTRA','curSeg=pbs.find(b=>u>=b.from&&u<b.to)||null' if ident=='care-bed' else '')
@@ -71,6 +126,7 @@ for ident in IDS:
     engine=engine.replace('    const ctl = {','    const ctl = {'+extra)
     # Keep the original engine geometry implementation, localize its root.
     engine=engine.replace("})(typeof window !== 'undefined' ? window : globalThis);",'})(localRoot);')
+    engine=optimize(engine, ident=='care-bed')
     engine='const localRoot={};\n'+engine
     extra_css=r'''
       .sk{--cn:system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;--hand:"AgingHand","AgingCaveat","KaiTi",cursive;color:#242936;background:#fff;padding:20px 16px;max-width:1200px}
@@ -91,6 +147,6 @@ for ident in IDS:
       .nursing-explosion,.aging-explosion{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:16px 0 8px}.nursing-explosion input,.aging-explosion input{flex:1;min-width:80px;accent-color:#42697b}.nursing-explosion button,.aging-explosion button{background:#edf3f7;font-weight:650}.nursing-exp-note,.aging-explosion-note{font:12px/1.6 var(--cn);color:#58636a}
       @media(prefers-reduced-motion:reduce){.sk *{animation:none!important;transition:none!important}}
     '''
-    module='import {prepareScene} from "../semantic.js?v='+SEMANTIC_HASH+'";\nconst EXTRA_CSS='+json.dumps(extra_css)+';\n'+engine+'\nexport const makeScene='+scene+';\nexport function createScene(){return prepareScene(makeScene(localRoot.Sketch3D.S,localRoot.Sketch3D.M),'+json.dumps(ident)+');}\nexport function mount(host){const scene=createScene();const ctl=localRoot.Sketch3D.mount(host,scene);ctl.view(scene.view);ctl.play(false);return ctl;}\n'
+    module='import {easeTo, canvasPaint, edgeBatch, localLighting} from "../engine.js?v='+ENGINE_HASH+'";\nimport {createMotionRenderer, triangulate} from "../motion-renderer.js?v='+MOTION_HASH+'";\nimport {prepareScene} from "../semantic.js?v='+SEMANTIC_HASH+'";\nconst EXTRA_CSS='+json.dumps(extra_css)+';\n'+engine+'\nexport const makeScene='+scene+';\nexport function createScene(){return prepareScene(makeScene(localRoot.Sketch3D.S,localRoot.Sketch3D.M),'+json.dumps(ident)+');}\nexport function mount(host){const scene=createScene();const ctl=localRoot.Sketch3D.mount(host,scene);ctl.view(scene.view);ctl.play(false);return ctl;}\n'
     (ROOT/'models').mkdir(exist_ok=True);(ROOT/'models'/f'{ident}.js').write_text(module)
-print('Built four direct-mount models from canonical Sketch3D sources; no iframe / global controller.')
+print(f'Built {len(IDS)} direct-mount models from Sketch3D sources.')

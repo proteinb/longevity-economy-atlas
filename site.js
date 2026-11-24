@@ -1,5 +1,5 @@
 const revision=new URL(import.meta.url).searchParams.get('v')||'2.1';
-import {products} from './catalog.js?v=475b0e8df0a5';
+import {products} from './catalog.js?v=e786e3053af7';
 const main=document.querySelector('main');let controller=null,generation=0,templates=null,saved=null,current=null;
 const originalHome=location.pathname==='/'||location.pathname.endsWith('/index.html')?main.innerHTML:null;
 function cleanup(){generation++;controller?.destroy();controller=null;saved=null;}
@@ -8,8 +8,13 @@ async function model(p){
  try{
   const module=await import('./models/'+p.id+'.js?v='+encodeURIComponent(revision));if(ticket!==generation)return;
   const slot=document.createElement('div');slot.id='interactive-model';const shadow=slot.attachShadow({mode:'open'}),target=document.createElement('div');shadow.appendChild(target);
-  host.appendChild(slot);controller=module.mount(target);host.querySelector('.model-poster')?.remove();host.querySelector('.load-status')?.remove();
-  host.dataset.ready='true';const audit=controller.query(new URLSearchParams(location.search));if(audit)showAudit(audit);
+  host.appendChild(slot);controller=module.mount(target);
+  const params=new URLSearchParams(location.search);
+  params.delete('item');
+  if(params.size){const audit=controller.query(params);if(audit)showAudit(audit);}
+  host.querySelector('.model-poster')?.remove();
+  host.querySelector('.load-status')?.remove();
+  host.dataset.ready='true';
   const ret=document.querySelector('#return-view'),message=document.querySelector('#state-message');
   document.querySelectorAll('[data-inspect]').forEach(b=>b.onclick=()=>{if(!saved)saved=controller.snapshot();controller.inspect(p.points[Number(b.dataset.inspect)]);ret.hidden=false;message.textContent='已定位示意部件；动画暂停。';host.scrollIntoView({block:'start',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});});
   ret.onclick=()=>{if(saved){controller.restore(saved);saved=null;ret.hidden=true;message.textContent='已返回原视图，保持暂停；可自行继续播放。';}};

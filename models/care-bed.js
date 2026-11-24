@@ -1,4 +1,6 @@
-import {prepareScene} from "../semantic.js?v=ce520a6dc274";
+import {easeTo, canvasPaint, edgeBatch, localLighting} from "../engine.js?v=89c5f18fbca2";
+import {createMotionRenderer, triangulate} from "../motion-renderer.js?v=ac23daef6f96";
+import {prepareScene} from "../semantic.js?v=31e598a62607";
 const EXTRA_CSS="\n      .sk{--cn:system-ui,-apple-system,\"PingFang SC\",\"Microsoft YaHei\",sans-serif;--hand:\"AgingHand\",\"AgingCaveat\",\"KaiTi\",cursive;color:#242936;background:#fff;padding:20px 16px;max-width:1200px}\n      .sk-title,.sk-sub,.sk-label,.sk-part-title{font-family:var(--hand)!important}\n      .sk-sub{font-size:15px;line-height:1.65;color:#59616b}\n      .sk-title{font-size:30px;line-height:1.3}.sk-fig{display:none}\n      .sk-stage{height:clamp(420px,52vw,620px);border:1px solid #9aa7af;border-radius:12px;background:#fff}\n      .sk-btn,.sk-step,.sk-pbtn{border:1px solid #65717b;border-radius:5px;box-shadow:2px 2px 0 #394552;font:14px/1.5 var(--cn);min-height:44px}\n      .sk button:disabled{opacity:.45;box-shadow:none;cursor:not-allowed}.sk button:focus-visible,.sk [role=button]:focus-visible,.sk input:focus-visible{outline:3px solid #284f73;outline-offset:3px}\n      .sk-all-status{font:14px/1.6 var(--cn);margin:8px 0;min-height:1.6em;color:#43515d}.sk-all{font-weight:700;background:#f5f1d8;flex-shrink:0}.sk-all.on{background:#e6edd8}\n      .sk-readout{font:14px/1.4 ui-monospace,monospace;font-variant-numeric:tabular-nums}\n      .sk-caption{font:15px/1.75 var(--cn)}.sk-step.on,.sk-pbtn.on{box-shadow:2px 2px 0 #394552,inset 0 0 0 1px #394552}\n      .sk-part-name{display:none}.sk-part-panel{display:none}.sk.pins .sk-part-panel{display:block;margin:14px 0 20px}\n      .sk-part-title{font-size:16px;margin:0 0 8px}.sk.pins .sk-part-panel .sk-legend{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;columns:auto;margin:0;font-size:14px}\n      .sk-part-panel .sk-legend li{min-height:44px;padding:7px 5px;border:1px solid #d2d8da;white-space:normal;line-height:1.5}\n      .sk.compact .sk-part-name{display:block;position:absolute;left:8px;right:8px;top:8px;z-index:2;pointer-events:none;background:#fff9e9;border:1px solid #bbb49d;border-radius:5px;padding:7px 9px;font-size:14px;line-height:1.4}\n      .sk.compact .sk-stage{height:460px}.sk.compact .sk-readout{font-size:12px}.sk-hint{font:12px var(--cn)}\n      .nursing-explosion,.aging-explosion{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:16px 0 8px}.nursing-explosion input,.aging-explosion input{flex:1;min-width:80px;accent-color:#42697b}.nursing-explosion button,.aging-explosion button{background:#edf3f7;font-weight:650}.nursing-exp-note,.aging-explosion-note{font:12px/1.6 var(--cn);color:#58636a}\n      @media(prefers-reduced-motion:reduce){.sk *{animation:none!important;transition:none!important}}\n    ";
 const localRoot={};
 
@@ -326,6 +328,8 @@ const localRoot={};
 .sk-stage{position:relative;width:100%;height:clamp(380px,60vw,640px);border:2px solid var(--ink);border-radius:22px 16px 26px 14px/16px 26px 14px 22px;overflow:hidden;background:#fff;outline:none;touch-action:none}
 .sk-stage:focus-visible{box-shadow:0 0 0 4px #ffd16699}
 .sk-canvas{position:absolute;inset:0;width:100%;height:100%;cursor:grab;display:block}
+.sk-motion,.sk-canvas-preview{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.sk-previewing .sk-canvas{opacity:0}
 .sk-stage.drag .sk-canvas{cursor:grabbing}
 .sk-labels{position:absolute;inset:0;pointer-events:none}
 .sk-label{position:absolute;left:0;top:0;pointer-events:auto;cursor:pointer;white-space:nowrap;font-size:15px;line-height:1;padding:5px 10px 5px 8px;
@@ -370,7 +374,7 @@ const localRoot={};
   box-shadow:3px 3px 0 var(--ink);display:inline-flex;align-items:center;gap:8px;transition:transform .15s,background .2s}
 .sk-pbtn b{font-family:var(--hand);font-size:15px;width:24px;height:24px;border-radius:50%;border:1.5px solid var(--ink);display:inline-flex;align-items:center;justify-content:center;background:var(--tint)}
 .sk-pbtn:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
-.sk-pbtn.next{background:var(--tint);animation:sk-pulse 1.4s ease-in-out infinite}
+.sk-pbtn.next{background:var(--tint);animation:sk-pulse 1.4s ease-in-out 2}
 .sk-pbtn.on{background:var(--tint);box-shadow:3px 3px 0 var(--ink),0 0 0 5px var(--glow)}
 .sk-pbtn.done::after{content:"✓";font-family:var(--hand);font-size:18px;color:#2a9d6f;margin-left:2px}
 .sk-pbtn.shake{animation:sk-shake .45s}
@@ -390,7 +394,31 @@ const localRoot={};
 
   /* ───────────── 主程序 ───────────── */
   function mount(target, sceneIn) {
-    let destroyed=false,viewHold=false;const lifecycle=new AbortController();
+    let destroyed = false, viewHold = false;
+    const lifecycle = new AbortController();
+    let raf = 0, last = null, camK = 1, easing = false, inFrame = false;
+    let qualityTimer = 0, motionUntil = 0, fast = false;
+    let pulsePart = null, pulseUntil = 0, pulse = 0.65;
+    let liveDiagnostics = false, diagnosticsPending = false;
+    function invalidate() {
+      if (!raf && !inFrame && !destroyed && !document.hidden) raf = requestAnimationFrame(frame);
+    }
+    function interaction() {
+      motionUntil = performance.now() + 150;
+      invalidate();
+    }
+    function publishDiagnostics() {
+      wrap.dataset.transforms = JSON.stringify(Object.fromEntries(parts.map(P => [P.id, P.W])));
+      wrap.dataset.progress = u.toFixed(5);
+      wrap.dataset.camera = [yaw, pitch, zoom].map(n => n.toFixed(3)).join(',');
+      wrap.dataset.selected = pinned?.id || '';
+    }
+    function ease(current, target, amount, epsilon) {
+      const next = easeTo(current, target, amount, epsilon);
+      if (next !== target) easing = true;
+      return next;
+    }
+
     const host = typeof target === 'string' ? document.querySelector(target) : target;
     const scene = typeof sceneIn === 'function' ? sceneIn(S, M) : sceneIn;
     const explodeVectors={"liftH":[0,0,-2],"liftF":[0,0,2],"backAct":[0,-1.2,-1.5],"kneeAct":[0,-1.2,1.5],"cboxIn":[0,-1.5,0]};
@@ -470,7 +498,52 @@ const localRoot={};
     const readout = el('div', 'sk-readout'); stage.appendChild(readout);
     const tip = el('div', 'sk-tip'); tip.hidden = true; stage.appendChild(tip);
     wrap.appendChild(stage);
-    const ctx = cv.getContext('2d');
+    const display = cv.getContext('2d');
+    const preview = document.createElement('canvas');
+    preview.className = 'sk-canvas-preview';
+    preview.hidden = true;
+    preview.setAttribute('aria-hidden', 'true');
+    cv.after(preview);
+    const previewContext = preview.getContext('2d');
+    const fullPaint = canvasPaint(display), previewPaint = canvasPaint(previewContext);
+    const fullStrokes = edgeBatch(display, fullPaint, seg);
+    const previewStrokes = edgeBatch(previewContext, previewPaint, seg);
+    let ctx = display, paint = fullPaint, strokes = fullStrokes;
+    let firstRender = true, pickingDpr = 1, motionRenderer, motion;
+    function setRenderSurface() {
+      const width = Math.round(W * dpr), height = Math.round(H * dpr);
+      if (fast && motionRenderer === undefined) {
+        motionRenderer = createMotionRenderer();
+        if (motionRenderer) {
+          const layer = motionRenderer.canvas;
+          layer.className = 'sk-motion';
+          layer.hidden = true;
+          layer.setAttribute('aria-hidden', 'true');
+          preview.before(layer);
+        }
+      }
+      motion = fast && motionRenderer?.begin(width, height) ? motionRenderer : null;
+      if (motionRenderer && motionRenderer.canvas.hidden === !!motion) {
+        motionRenderer.canvas.hidden = !motion;
+      }
+      if (preview.hidden === fast) preview.hidden = !fast;
+      stage.classList.toggle('sk-previewing', fast);
+      ctx = fast ? previewContext : display;
+      paint = fast ? previewPaint : fullPaint;
+      strokes = fast ? previewStrokes : fullStrokes;
+      if (fast && (preview.width !== width || preview.height !== height)) {
+        preview.width = width;
+        preview.height = height;
+        previewPaint.reset();
+      }
+    }
+    const colors = new Map();
+    function cachedColor(c) {
+      const key = ((c[0] | 0) << 16) | ((c[1] | 0) << 8) | (c[2] | 0);
+      let value = colors.get(key);
+      if (value === undefined) { value = css(c); colors.set(key, value); }
+      return value;
+    }
 
     // 标签
     const labeled = parts.filter((P) => P.label);
@@ -479,8 +552,8 @@ const localRoot={};
       L.style.setProperty('--c', css(P.base)); L.style.setProperty('--tint', css(mixc(P.base, WHITE, 0.62)));
       L.style.setProperty('--glow', css(P.base, 0.28));
       L.appendChild(el('b', 'sk-no', String(i + 1))); L.appendChild(el('i', 'sk-sw')); L.appendChild(el('span', '', P.label));
-      L.addEventListener('pointerenter', () => { hoverPart = P; });
-      L.addEventListener('pointerleave', () => { if (hoverPart === P) hoverPart = null; });
+      L.addEventListener('pointerenter', () => { hoverPart = P; invalidate(); });
+      L.addEventListener('pointerleave', () => { if (hoverPart === P) hoverPart = null; invalidate(); });
       L.addEventListener('click', (e) => { e.stopPropagation(); pinned = pinned === P ? null : P; showNote(P); });
       L.tabIndex=0;L.setAttribute('role','button');L.setAttribute('aria-label',P.label);L.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();pinned=pinned===P?null:P;showNote(P);}});labelLayer.appendChild(L);
       P.L = { el: L, side: 0, y: null, x: null, w: 80, h: 26, ty: 0 };
@@ -501,11 +574,12 @@ const localRoot={};
         const curSeg = el('div', 'sk-seg'); curSeg.style.flex = String(s.to - s.from); curSeg.style.background = css(mixc(s.c, WHITE, 0.45)); bar.appendChild(curSeg);
       });
       knob = el('div', 'sk-knob'); bar.appendChild(knob);
-      let scrub = false;
       const scrubTo = (e) => { const r = bar.getBoundingClientRect(); setU(clamp((e.clientX - r.left) / r.width, 0, 0.9999)); };
-      bar.addEventListener('pointerdown', (e) => { scrub = true; bar.setPointerCapture(e.pointerId); wasPlaying = playing; playing = false; scrubTo(e); });
-      bar.addEventListener('pointermove', (e) => { if (scrub) scrubTo(e); });
-      bar.addEventListener('pointerup', () => { scrub = false; playing = wasPlaying; syncButtons(); });
+      bar.addEventListener('pointerdown', (e) => { scrubbing = true; interaction(); bar.setPointerCapture(e.pointerId); wasPlaying = playing; playing = false; scrubTo(e); });
+      bar.addEventListener('pointermove', (e) => { if (scrubbing) { interaction(); scrubTo(e); } });
+      const endScrub = () => { scrubbing = false; playing = wasPlaying; interaction(); syncButtons(); };
+      bar.addEventListener('pointerup', endScrub);
+      bar.addEventListener('pointercancel', endScrub);
       tl.appendChild(row); tl.appendChild(bar); wrap.appendChild(tl);
     }
     // 按钮模式：每个按钮播放一步（或连续几步），有先后顺序
@@ -534,7 +608,7 @@ const localRoot={};
 
     // 按钮
     const controls = el('div', 'sk-controls'); wrap.appendChild(controls);
-    const btn = (txt, key, fn) => { const b = el('button', 'sk-btn'); b.type = 'button'; b.appendChild(document.createTextNode(txt)); if (key) b.appendChild(el('kbd', '', key)); b.addEventListener('click', fn); controls.appendChild(b); return b; };
+    const btn = (txt, key, fn) => { const b = el('button', 'sk-btn'); b.type = 'button'; b.appendChild(document.createTextNode(txt)); if (key) b.appendChild(el('kbd', '', key)); b.addEventListener('click', (event) => { fn(event); invalidate(); }); controls.appendChild(b); return b; };
     const hasShell = parts.some((P) => P.role === 'shell'), hasExplode = parts.some((P) => P.def.explode);
     const bPlay = btn('暂停', '空格', () => { togglePlay(); });
     const bSpeed = btn('速度 1×', '', () => { speedIx = (speedIx + 1) % SPEEDS.length; syncButtons(); });
@@ -569,13 +643,13 @@ const localRoot={};
     let uAbs = 0, u = 0, xray = scene.xray ? 1 : 0, xrayT = xray, expl = 0, expT = 0;
     let labelMode = scene.labels === 'step' ? 1 : scene.labels === false ? 2 : 0; // 0 全部 1 仅当前 2 关
     const view0 = Object.assign({ yaw: -32, pitch: 20, zoom: 1 }, scene.view || {});
-    let yaw = view0.yaw, pitch = view0.pitch, zoom = view0.zoom, vyaw = 0, vpitch = 0, swayAmp = 0, swayT = 0, idle = 99, sway = 0;
+    let yaw = view0.yaw, pitch = view0.pitch, zoom = view0.zoom, vyaw = 0, vpitch = 0;
     let hoverPart = null, pinned = null, W = 0, H = 0, dpr = 1, compact = false, pinMode = false, lastStep = -2, lastRead = '';
     let camGoal = null, lastViewKey = '', reqView = null, focusGoal = null, focusCur = null, camLock = false;
     let mode = pbs.length && scene.mode === 'buttons' ? 'buttons' : 'auto', curSeg = null;
     const done = new Set();
     if (mode === 'buttons') playing = false;            // 按钮模式：等用户按
-    const resetView = () => { yaw = view0.yaw; pitch = view0.pitch; zoom = view0.zoom; vyaw = vpitch = 0; camGoal = null; bake(); };
+    const resetView = () => { viewHold=false; invalidate(); yaw = view0.yaw; pitch = view0.pitch; zoom = view0.zoom; vyaw = vpitch = 0; camGoal = null; };
     const anyViews = (scene.steps || []).some((s) => s.view);
     // 步骤或 animate 里 api.view() 要求的镜头：变化时缓缓转过去；用户一拖就让给用户
     function wantView(si) {if(viewHold)return;
@@ -583,9 +657,8 @@ const localRoot={};
       const v = reqView || (steps[si] && steps[si].view) || (anyViews || reqView ? {} : null);
       if (!v) return;
       const goal = Object.assign({}, view0, v), key = goal.yaw + ',' + goal.pitch + ',' + goal.zoom + ',' + goal.focus;
-      if (key !== lastViewKey) { lastViewKey = key; bake(); camGoal = goal; focusGoal = goal.focus || null; }
+      if (key !== lastViewKey) { lastViewKey = key; camGoal = goal; focusGoal = goal.focus || null; }
     }
-    const bake = () => { yaw += sway; sway = 0; swayAmp = 0; idle = 0; };
 // Inlined by build-sketch.py into each instance; driven only by its existing RAF.
 function cancelAll(){
   if(allPlayback)playing=false;
@@ -620,8 +693,8 @@ function advanceAll(dt){
 
     function togglePlay(){if(!playing){expl=expT=0;lastViewKey='';}playing=!playing;syncButtons();}
     function setExplosion(value,immediate=false){cancelAll();playing=false;expT=clamp(Number(value)||0,0,1);if(immediate||reduce)expl=expT;labelMode=0;camGoal=null;focusGoal=null;zoom=view0.zoom;lastViewKey='';syncButtons();}
-    function setU(x) {cancelAll();viewHold=false; expl=expT=0; const base = Math.floor(uAbs); uAbs = base + x; u = x; }
-    function syncButtons() {syncAll();
+    function setU(x) {invalidate();cancelAll();viewHold=false; expl=expT=0; const base = Math.floor(uAbs); uAbs = base + x; u = x; }
+    function syncButtons() {invalidate();syncAll();
       wrap.dataset.playing=String(playing);wrap.dataset.mode=mode;wrap.dataset.segment=curSeg?curSeg.id:'';wrap.dataset.done=[...done].join(',');
       bPlay.firstChild.textContent = playing ? '暂停' : mode === 'buttons' ? '继续' : '播放'; bPlay.setAttribute('aria-pressed', String(!playing));bPlay.disabled=mode==='buttons'&&!curSeg;if(bPlay.disabled)bPlay.firstChild.textContent='先选步骤';
       if (bMode) bMode.firstChild.textContent = mode === 'buttons' ? '模式：按钮' : '模式：自动循环';
@@ -665,6 +738,7 @@ function advanceAll(dt){
     }
     syncButtons();
     function showNote(P) {
+      invalidate();
       if (!P) return; let named=P;while(!named.label&&named.parent)named=named.parent;partName.textContent=(named.no?named.no+' · ':'')+(named.label||named.def.name||'未命名示意部件');partName.dataset.partId=named.id; caption.innerHTML = '';
       const b = el('b', '', P.label || P.def.name || P.id); b.style.setProperty('--tint', css(mixc(P.base, WHITE, 0.55)));
       caption.appendChild(b); caption.appendChild(document.createTextNode(P.note || '')); lastStep = -3;
@@ -722,43 +796,71 @@ function advanceAll(dt){
     const B0 = bounds(0), B1 = hasExplode ? bounds(1) : B0;
 
     /* —— 尺寸 —— */
-    let hatch = null;
+    let hatch = null, scrubbing = false;
+    const coarsePointer = matchMedia('(pointer: coarse)');
     function resize() {
-      const r = stage.getBoundingClientRect(); W = r.width; H = r.height; dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const r = stage.getBoundingClientRect();
+      const nextDpr = Math.min(window.devicePixelRatio || 1, coarsePointer.matches || window.innerWidth < 640 ? 1.5 : 2);
+      if (W === r.width && H === r.height && dpr === nextDpr) {
+        measureLabels();
+        return;
+      }
+      W = r.width; H = r.height; dpr = nextDpr;
       cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+      fullPaint.reset();
+      invalidate();
       compact = W < 640; wrap.classList.toggle('compact', compact);
       const s = Math.round(7 * dpr), hc = document.createElement('canvas'); hc.width = hc.height = s;
       const h = hc.getContext('2d'); h.strokeStyle = css(INK); h.lineWidth = 0.9 * dpr; h.lineCap = 'square';
       h.beginPath(); h.moveTo(-1, s + 1); h.lineTo(s + 1, -1); h.moveTo(-1, 1); h.lineTo(1, -1); h.moveTo(s - 1, s + 1); h.lineTo(s + 1, s - 1); h.stroke();
-      hatch = ctx.createPattern(hc, 'repeat');
-      labeled.forEach((P) => { P.L.w = P.L.el.offsetWidth || 80; P.L.h = P.L.el.offsetHeight || 26; });
+      hatch = display.createPattern(hc, 'repeat');
+      measureLabels();
     }
-    const sizeObserver=new ResizeObserver(resize);sizeObserver.observe(stage); resize();
+    function measureLabels() {
+      for (const { L } of labeled) {
+        const width = L.el.offsetWidth || 80, height = L.el.offsetHeight || 26;
+        if (width === L.w && height === L.h) continue;
+        L.w = width; L.h = height;
+        invalidate();
+      }
+    }
+    const sizeObserver = new ResizeObserver(resize);
+    sizeObserver.observe(stage);
+    window.addEventListener('resize', resize, { signal: lifecycle.signal });
+    coarsePointer.addEventListener('change', resize, { signal: lifecycle.signal });
+    resize();
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(()=>{if(!destroyed)resize();});
 
     /* —— 交互 —— */
     const ptrs = new Map(); let dragMoved = 0, pinch0 = 0, zoom0 = 1, mouse = null;
     cv.addEventListener('pointerdown', (e) => {
-      const r=stage.getBoundingClientRect();mouse=[e.clientX-r.left,e.clientY-r.top];cv.setPointerCapture(e.pointerId); ptrs.set(e.pointerId, [e.clientX, e.clientY]); dragMoved = 0; bake(); vyaw = vpitch = 0; camGoal = null;
+      const r=stage.getBoundingClientRect();mouse=[e.clientX-r.left,e.clientY-r.top];cv.setPointerCapture(e.pointerId); ptrs.set(e.pointerId, [e.clientX, e.clientY]); dragMoved = 0; vyaw = vpitch = 0; camGoal = null;
+      interaction();
       stage.classList.add('drag'); stage.focus({ preventScroll: true });
       if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; pinch0 = Math.hypot(a[0] - b[0], a[1] - b[1]); zoom0 = zoom; }
     });
     cv.addEventListener('pointermove', (e) => {
       const r = stage.getBoundingClientRect(); mouse = [e.clientX - r.left, e.clientY - r.top];
-      if (!ptrs.has(e.pointerId)) return;
+      if (!ptrs.has(e.pointerId)) {
+        const previous = hoverPart;
+        stageHover(pick(mouse));
+        if (hoverPart !== previous) invalidate();
+        return;
+      }
+      interaction();
       const p = ptrs.get(e.pointerId), dx = e.clientX - p[0], dy = e.clientY - p[1]; ptrs.set(e.pointerId, [e.clientX, e.clientY]);
       if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; zoom = clamp(zoom0 * Math.hypot(a[0] - b[0], a[1] - b[1]) / (pinch0 || 1), 0.45, 3.2); dragMoved += 10; return; }
-      dragMoved += Math.abs(dx) + Math.abs(dy); idle = 0;
+      dragMoved += Math.abs(dx) + Math.abs(dy);
       yaw += dx * 0.45; pitch = clamp(pitch + dy * 0.35, -85, 85); vyaw = dx * 0.45 * 60; vpitch = dy * 0.35 * 60;
     });
     const up = (e) => {
-      ptrs.delete(e.pointerId); stage.classList.remove('drag');
+      ptrs.delete(e.pointerId); interaction(); if (!ptrs.size) stage.classList.remove('drag');
       if (dragMoved < 5 && e.type === 'pointerup') { const P = pick(mouse); pinned = P && pinned !== P ? P : null; if (P) showNote(P); }
     };
     cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
-    cv.addEventListener('pointerleave', () => { mouse = null; });
+    cv.addEventListener('pointerleave', () => { mouse = null; invalidate(); });
     cv.addEventListener('dblclick', resetView);
-    cv.addEventListener('wheel', (e) => { e.preventDefault(); zoom = clamp(zoom * Math.exp(-e.deltaY * 0.0012), 0.45, 3.2); idle = 0; }, { passive: false });
+    cv.addEventListener('wheel', (e) => { e.preventDefault(); interaction(); zoom = clamp(zoom * Math.exp(-e.deltaY * 0.0012), 0.45, 3.2); }, { passive: false });
     stage.addEventListener('keydown', (e) => {
       if(e.altKey||e.ctrlKey||e.metaKey)return;const k = e.key.toLowerCase(); let hit = true;
       if (k === ' ') { if (mode === 'buttons' && !curSeg && !playing) toast('按下面的按钮开始'); else togglePlay(); }
@@ -770,16 +872,25 @@ function advanceAll(dt){
       else if (k === 'r') resetView();
       else if (k === 'arrowright' && steps.length) { const i = (Math.max(0, stepAt(u)) + 1) % steps.length; setU(steps[i].from + 1e-4); }
       else if (k === 'arrowleft' && steps.length) { const i = (Math.max(0, stepAt(u)) - 1 + steps.length) % steps.length; setU(steps[i].from + 1e-4); }
-      else if (k === 'a') { bake(); yaw -= 10; } else if (k === 'd') { bake(); yaw += 10; }
-      else if (k === 'w') { bake(); pitch = clamp(pitch + 8, -85, 85); } else if (k === 's') { bake(); pitch = clamp(pitch - 8, -85, 85); }
+      else if (k === 'a') { yaw -= 10; } else if (k === 'd') { yaw += 10; }
+      else if (k === 'w') { pitch = clamp(pitch + 8, -85, 85); } else if (k === 's') { pitch = clamp(pitch - 8, -85, 85); }
       else if (k === '+' || k === '=') zoom = clamp(zoom * 1.15, 0.45, 3.2); else if (k === '-') zoom = clamp(zoom / 1.15, 0.45, 3.2);
       else hit = false;
       if (hit) { e.preventDefault(); syncButtons(); }
     });
-    let onScreen = true;
-    // A sandboxed srcdoc can report a visible stage as non-intersecting.
-    // The gallery removes inactive frames; only document visibility gates this one.
-    const visibilityHandler=()=>{onScreen=!document.hidden;if(document.hidden)playing=false;if(onScreen&&!raf&&!destroyed)raf=requestAnimationFrame(frame);};document.addEventListener('visibilitychange',visibilityHandler);
+    const visibilityHandler = () => {
+      if (document.hidden) {
+        cancelAnimationFrame(raf);
+        clearTimeout(qualityTimer);
+        raf = 0;
+        last = null;
+        playing = false;
+        syncButtons();
+      } else {
+        invalidate();
+      }
+    };
+    document.addEventListener('visibilitychange', visibilityHandler);
 
     /* —— 投影 —— */
     let cam = null;
@@ -787,8 +898,8 @@ function advanceAll(dt){
       const Bc = { c: B0.c.map((v, i) => v + (B1.c[i] - v) * expl), r: B0.r + (B1.r - B0.r) * expl };
       // 镜头对准点：默认是整体中心，步骤可以用 view.focus 指到某处（缓动过去）
       const fT = focusGoal || Bc.c; focusCur = focusCur || fT.slice();
-      for (let i = 0; i < 3; i++) focusCur[i] += (fT[i] - focusCur[i]) * camK;
-      const V = mul(Rx(pitch * D2R), mul(Ry((yaw + sway) * D2R), Tm(scl(focusCur, -1))));
+      for (let i = 0; i < 3; i++) focusCur[i] = ease(focusCur[i], fT[i], camK);
+      const V = mul(Rx(pitch * D2R), mul(Ry((yaw) * D2R), Tm(scl(focusCur, -1))));
       const cap = Math.max(4, Math.floor((H - 50) / 31)) * 2;
       const pm = compact || (labelMode === 0 && labeled.length > cap);
       if (pm !== pinMode) { pinMode = pm; wrap.classList.toggle('pins', pm); }
@@ -803,6 +914,13 @@ function advanceAll(dt){
     /* —— 手绘线 —— */
     function jit(seed, vi, pass) { return [(hash(seed, vi, pass) - 0.5) * 2, (hash(seed, vi, pass + 17) - 0.5) * 2]; }
     function seg(P, a, b, ei, pass, crease) {
+      if (fast) {
+        const x = P.sx[a], y = P.sy[a], endX = P.sx[b], endY = P.sy[b];
+        if (Math.abs(endX - x) + Math.abs(endY - y) < 1) return;
+        ctx.moveTo(x, y);
+        ctx.lineTo(endX, endY);
+        return;
+      }
       const r = style.rough * dpr, ja = jit(P.seed, a, pass), jb = jit(P.seed, b, pass);
       let x1 = P.sx[a] + ja[0] * r * 0.9, y1 = P.sy[a] + ja[1] * r * 0.9, x2 = P.sx[b] + jb[0] * r * 0.9, y2 = P.sy[b] + jb[1] * r * 0.9;
       const dx = x2 - x1, dy = y2 - y1, L = Math.hypot(dx, dy); if (L < 0.2) return;
@@ -816,86 +934,188 @@ function advanceAll(dt){
     }
 
     /* —— 拾取 —— */
-    let drawn = [];
-    function inPoly(x, y, xs, ys) { let c = false; for (let i = 0, j = xs.length - 1; i < xs.length; j = i++) if ((ys[i] > y) !== (ys[j] > y) && x < ((xs[j] - xs[i]) * (y - ys[i])) / (ys[j] - ys[i]) + xs[i]) c = !c; return c; }
+    const drawn = [];
+    const items = [], shells = [], inside = [], ground = [], list = [], mixed = [];
+    const cont = Object.create(null), zC = Object.create(null), inserted = new Set();
+    const active = new Set();
+    const byZ = (a, b) => a.z - b.z;
+    function inPoly(x, y, { P, fi }) {
+      const indices = P.mesh.f[fi].i, xs = P.sx, ys = P.sy;
+      let inside = false;
+      for (let i = 0, j = indices.length - 1; i < indices.length; j = i++) {
+        const a = indices[i], b = indices[j];
+        if ((ys[a] > y) !== (ys[b] > y) && x < (xs[b] - xs[a]) * (y - ys[a]) / (ys[b] - ys[a]) + xs[a]) inside = !inside;
+      }
+      return inside;
+    }
     function pick(m) {
-      if (!m) return null; const x = m[0] * dpr, y = m[1] * dpr;
+      if (!m) return null; const x = m[0] * pickingDpr, y = m[1] * pickingDpr;
       for (let i = drawn.length - 1; i >= 0; i--) {
-        const it = drawn[i]; if (it.a < 0.45 || it.P.def.pick === false) continue;
-        if (inPoly(x, y, it.xs, it.ys)) return it.P;
+        const it = drawn[i]; if (it.P.a < 0.45 || it.P.def.pick === false) continue;
+        if (inPoly(x, y, it)) return it.P;
       }
       return null;
     }
 
     /* —— 每帧 —— */
-    let last = performance.now(), raf = 0, camK = 1;
     function frame(now) {
       raf = 0;
-      const dt = Math.min(0.05, (now - last) / 1000); last = now;
-      if (!onScreen||destroyed) return;
+      if (document.hidden || destroyed) return;
+      inFrame = true;
+      const dt = last === null ? 1 / 60 : Math.min(0.1, Math.max(0, (now - last) / 1000));
+      last = now;
+      easing = false;
       if(allPlayback) advanceAll(dt);
       else if (playing && mode === 'buttons') {
         const end = curSeg ? curSeg.to - 1e-4 : 0.9999;
         uAbs = Math.min(end, uAbs + (dt * SPEEDS[speedIx]) / cycle); u = uAbs;
         if (uAbs >= end) { playing = false; if (curSeg) { done.add(curSeg.id); curSeg = null; if (done.size === pbs.length) toast('全部完成 · 点“重来”再来一遍'); } syncButtons(); }
       } else if (playing) { uAbs += (dt * SPEEDS[speedIx]) / cycle; u = uAbs - Math.floor(uAbs); }
-      xray += (xrayT - xray) * Math.min(1, dt * 6); if (Math.abs(xray - xrayT) < 0.002) xray = xrayT;
-      expl += (expT - expl) * (reduce?1:Math.min(1, dt * 8));expRange.value=String(Math.round(expl*100));expOutput.textContent=Math.round(expl*100)+'%';wrap.dataset.explode=expl.toFixed(4); if (Math.abs(expl - expT) < 0.002) expl = expT;
+      xray = ease(xray, xrayT, reduce ? 1 : Math.min(1, dt * 6));
+      if (expl !== expT) {
+        expl = ease(expl, expT, reduce ? 1 : Math.min(1, dt * 8));
+        expRange.value = String(Math.round(expl * 100));
+        expOutput.textContent = expRange.value + '%';
+      }
+      const explodeText = expl.toFixed(4);
+      if (wrap.dataset.explode !== explodeText) wrap.dataset.explode = explodeText;
       if (!ptrs.size && camGoal) {
         const k = reduce?1:Math.min(1, dt * 2.6), dy = ((camGoal.yaw - yaw) % 360 + 540) % 360 - 180;
-        yaw += dy * k; pitch += (camGoal.pitch - pitch) * k; zoom += (camGoal.zoom - zoom) * k; idle = 0;
-        if (Math.abs(dy) < 0.2 && Math.abs(camGoal.pitch - pitch) < 0.2 && Math.abs(camGoal.zoom - zoom) < 0.003) camGoal = null;
+        yaw += dy * k; pitch += (camGoal.pitch - pitch) * k; zoom += (camGoal.zoom - zoom) * k;
+        if (Math.abs(dy) < 0.2 && Math.abs(camGoal.pitch - pitch) < 0.2 && Math.abs(camGoal.zoom - zoom) < 0.003) {
+          yaw += dy * (1 - k);
+          pitch = camGoal.pitch;
+          zoom = camGoal.zoom;
+          camGoal = null;
+        }
       }
       if(reduce)vyaw=vpitch=0;
       if (!ptrs.size) {
         yaw += vyaw * dt; pitch = clamp(pitch + vpitch * dt, -85, 85); vyaw *= Math.pow(0.04, dt); vpitch *= Math.pow(0.04, dt);
         if (Math.abs(vyaw) < 0.5) vyaw = 0; if (Math.abs(vpitch) < 0.5) vpitch = 0;
-        idle += dt;
-        if (!reduce && scene.sway !== false && idle > 4) { swayT += dt; swayAmp = Math.min(16, swayAmp + dt * 6); sway = swayAmp * Math.sin(swayT * 0.35); }
       }
       camK = reduce?1:Math.min(1, dt * 2.6);
+      if (pinned !== pulsePart) {
+        pulsePart = pinned;
+        pulseUntil = pinned && !reduce ? now + 3000 : 0;
+      }
+      pulse = playing || now < pulseUntil ? 0.65 + 0.35 * Math.sin(now / 260) : 0.65;
+      const moving = playing || vyaw || vpitch || camGoal || xray !== xrayT || expl !== expT;
+      if (moving) motionUntil = performance.now() + 150;
+      fast = !!(moving || ptrs.size || scrubbing || now < motionUntil);
       render(dt);
-      wrap.dataset.progress=u.toFixed(5);wrap.dataset.camera=[yaw,pitch,zoom].map(n=>n.toFixed(3)).join(',');
-      raf = requestAnimationFrame(frame);
+      if (liveDiagnostics || diagnosticsPending) {
+        publishDiagnostics();
+        diagnosticsPending = false;
+      }
+      inFrame = false;
+      clearTimeout(qualityTimer);
+      if (playing || (!ptrs.size && (vyaw || vpitch || camGoal)) || easing || now < pulseUntil) {
+        invalidate();
+      } else {
+        last = null;
+        if (fast && !ptrs.size && !scrubbing) {
+          qualityTimer = setTimeout(invalidate, Math.max(0, motionUntil - performance.now()));
+        }
+      }
     }
 
     function render(dt) {
+      const displayDpr = dpr;
+      if (fast) dpr = Math.min(dpr, 0.75);
+      setRenderSurface();
       runAnim(u); worlds(expl); setupCamera();
-      wrap.dataset.transforms=JSON.stringify(Object.fromEntries(parts.map(P=>[P.id,P.W])));wrap.dataset.selected=pinned?pinned.id:'';
-      const si = mode === 'buttons' && !curSeg && !done.size ? -1 : api.step, step = steps[si], active = new Set(expl>0?[]:step ? step.set : []);
+      const si = mode === 'buttons' && !curSeg && !done.size ? -1 : api.step, step = steps[si];
+      active.clear();
+      if (expl === 0 && step) for (const P of step.set) active.add(P);
       wantView(si);
       const focus = hoverPart || pinned;
       if (focus) active.add(focus);
       const anyActive = active.size > 0;
-      const pulse = 0.65 + 0.35 * Math.sin(performance.now() / 260);
 
       // 变换顶点
-      const items = [], shells = [], inside = [], ground = [], cont = {};
-      const eye = [0, 0, cam.D];
+      items.length = shells.length = inside.length = ground.length = list.length = mixed.length = 0;
+      for (const key in cont) cont[key].length = 0;
       for (const P of parts) {
-        if (!P.shown || P.alpha <= 0.01) { P.vis = null; continue; }
+        if (!P.shown || P.alpha <= 0.01) { continue; }
         const C = mul(cam.V, P.W), V = P.mesh.v, n = V.length;
         if (P.def.decal) {   // 贴花：只在它朝向镜头的那一面看得见（足底图层、贴在表面上的标记）
           const dn = apR(C, P.def.decal), c0 = ap(C, P.center);
-          if (dot(dn, sub([0, 0, cam.D], c0)) <= 0) { P.vis = null; P.glowA = 0; continue; }
+          if (dot(dn, sub([0, 0, cam.D], c0)) <= 0) { P.glowA = 0; continue; }
         }
-        if (!P.sx || P.sx.length !== n) { P.sx = new Float32Array(n); P.sy = new Float32Array(n); P.cz = new Float32Array(n); }
-        for (let i = 0; i < n; i++) { const c = ap(C, V[i]), q = proj(c); P.sx[i] = q[0]; P.sy[i] = q[1]; P.cz[i] = c[2]; P.cpos = P.cpos || []; P.cpos[i] = c; }
-        P.vis = new Int32Array(P.mesh.f.length).fill(-1);
+        if (!P.sx) {
+          P.sx = new Float32Array(n);
+          P.sy = new Float32Array(n);
+          P.vis = new Int32Array(P.mesh.f.length);
+          P.faceItems = P.mesh.f.map((face, fi) => {
+            const center = [0, 0, 0];
+            for (const index of face.i) for (let axis = 0; axis < 3; axis++) center[axis] += V[index][axis];
+            for (let axis = 0; axis < 3; axis++) center[axis] /= face.i.length;
+            return { k: 0, P, fi, center, z: 0, tone: 0 };
+          });
+          P.loops = P.mesh.f.map(f => [f.i, ...(f.h || [])]);
+        }
+        const cpos = fast ? null : (P.cpos ||= new Float64Array(n * 3));
+        for (let i = 0; i < n; i++) {
+          const vertex = V[i], x = vertex[0], y = vertex[1], z = vertex[2];
+          const cx = C[0] * x + C[1] * y + C[2] * z + C[9];
+          const cy = C[3] * x + C[4] * y + C[5] * z + C[10];
+          const cz = C[6] * x + C[7] * y + C[8] * z + C[11];
+          if (cpos) {
+            const offset = i * 3;
+            cpos[offset] = cx; cpos[offset + 1] = cy; cpos[offset + 2] = cz;
+          }
+          const scale = cam.D / (cam.D - cz);
+          P.sx[i] = cam.cx + cx * scale * cam.K;
+          P.sy[i] = cam.cy - cy * scale * cam.K;
+        }
+        P.vis.fill(-1);
         const glass = P.role === 'shell' || P.def.glass ? xray : 0;
         P.a = P.alpha * (1 - 0.86 * glass); P.glass = glass;
         P.isOn = active.has(P); P.isDim = anyActive && !P.isOn && P.def.dim !== false;
-        P.glowA += ((P.isOn ? 1 : 0) - P.glowA) * Math.min(1, dt * 8);
+        P.glowA = ease(P.glowA, P.isOn ? 1 : 0, firstRender || reduce ? 1 : Math.min(1, dt * 8));
         const bucket = P.role === 'ground' ? ground : P.role === 'shell' ? shells : P.role !== 'inside' ? items
           : P.def.in ? (cont[P.def.in] = cont[P.def.in] || []) : inside;
-        P.mesh.f.forEach((f, fi) => {
-          let nn = norm(apR(C, P.fn[fi])); let cx = 0, cy = 0, cz = 0;
-          for (const i of f.i) { const c = P.cpos[i]; cx += c[0]; cy += c[1]; cz += c[2]; }
-          const k = f.i.length; cx /= k; cy /= k; cz /= k;
-          let front = dot(nn, sub(eye, [cx, cy, cz])) > 0;
-          if (!front) { if (!P.def.double) return; nn = scl(nn, -1); }
-          bucket.push({ k: 0, P, fi, z: cz + (P.def.bias || 0), n: nn });
-        });
+        const line = cachedColor(P.isDim ? mixc(P.line, WHITE, 0.45) : P.line);
+        P.lineColor = line;
+        P.glowColor = P.glowA > 0.02 && !fast ? cachedColor(mixc(P.base, WHITE, 0.62 - 0.22 * pulse)) : null;
+        const palette = P.isOn ? P.hot : P.isDim ? P.off : P.tones;
+        P.fillColors ||= [];
+        for (let i = 0; i < 3; i++) {
+          P.fillColors[i] = cachedColor(P.isOn ? mixc(palette[i], WHITE, (1 - pulse) * 0.18) : palette[i]);
+        }
+        const local = fast ? localLighting(C, cam.D, LIGHT) : null;
+        for (let fi = 0; fi < P.mesh.f.length; fi++) {
+          const item = P.faceItems[fi], normal = P.fn[fi], center = item.center;
+          let cz = C[6] * center[0] + C[7] * center[1] + C[8] * center[2] + C[11];
+          let front, shade;
+          if (local) {
+            const eye = local.eye;
+            front = normal[0] * (eye[0] - center[0]) + normal[1] * (eye[1] - center[1])
+              + normal[2] * (eye[2] - center[2]) > 0;
+            shade = dot(normal, local.light);
+          } else {
+            let cx = C[0] * center[0] + C[1] * center[1] + C[2] * center[2] + C[9];
+            let cy = C[3] * center[0] + C[4] * center[1] + C[5] * center[2] + C[10];
+            if (cpos) {
+              cx = cy = cz = 0;
+              const vertices = P.mesh.f[fi].i;
+              for (const index of vertices) {
+                const offset = index * 3;
+                cx += cpos[offset]; cy += cpos[offset + 1]; cz += cpos[offset + 2];
+              }
+              cx /= vertices.length; cy /= vertices.length; cz /= vertices.length;
+            }
+            const n = apR(C, normal);
+            front = -n[0] * cx - n[1] * cy + n[2] * (cam.D - cz) > 0;
+            shade = dot(n, LIGHT) / (vlen(n) || 1);
+          }
+          if (!front && !P.def.double) continue;
+          const d = front ? shade : -shade;
+          item.z = cz + (P.def.bias || 0);
+          item.tone = d > 0.55 ? 0 : d > 0.1 ? 1 : 2;
+          bucket.push(item);
+        }
         if (P.def.glow && (P.def.glow !== 'active' || P.glowA > 0.02)) {
           const c = ap(C, P.center), q = proj(c);
           (P.role === 'inside' ? inside : items).push({ k: 2, P, z: c[2] + P.rad, q, r: P.rad * q[2] * cam.K * (P.pose.scale && typeof P.pose.scale === 'number' ? P.pose.scale : 1) });
@@ -909,7 +1129,7 @@ function advanceAll(dt){
         if (typeof F.on === 'function') target = F.on(u, api);
         if (flowSet[F.id] != null) target = flowSet[F.id];
         if (!F.keepOnExplode) target *= 1 - expl;
-        F.cur += (target - F.cur) * Math.min(1, dt * 6); if (F.cur < 0.01) continue;
+        F.cur = ease(F.cur, target, firstRender || reduce ? 1 : Math.min(1, dt * 6)); if (F.cur < 0.01) continue;
         const path = typeof F.path === 'function' ? F.path(u, api) : F.path;
         if (!path || path.length < 2) continue;
         const Wm = F.parent && byId[F.parent] ? byId[F.parent].W : I(), C = mul(cam.V, Wm);
@@ -928,79 +1148,96 @@ function advanceAll(dt){
           bucket.push({ k: 1, F, z: c[2], q, r: Math.max(1.6 * dpr, F.size * q[2] * cam.K), a: F.cur * fade });
         }
       }
-      const byZ = (a, b) => a.z - b.z;
-      ground.sort(byZ); items.sort(byZ); shells.sort(byZ); inside.sort(byZ);
-      let list;
+      ground.sort(byZ); inside.sort(byZ);
+      for (const item of ground) list.push(item);
       if (shells.length) {
         // 外壳的可见面在“里面的部件”之后画；外部件照常按深度与外壳交错。
         // 没写 in 的内部件插在第一个外壳面之前；写了 in: 外壳id/组名 的，插在它自己那个外壳最远的可见面之前。
         // 插入点：在“比这批内部件最远处还近”的第一块外壳面之前。更远的外壳面（背面）和更远的外部件（如外壳后面的底座）先画。
-        const mixed = items.concat(shells).sort(byZ), done = new Set();
+        mixed.push(...items, ...shells); mixed.sort(byZ); inserted.clear();
         // 只按“面”算最远深度：粒子会飘到外壳边上，拿它们算会让整块内部件插得太早
         const zMin = (arr) => { let m = Infinity, any = false; for (const x of arr) if (x.k === 0) { any = true; if (x.z < m) m = x.z; } if (!any) for (const x of arr) m = Math.min(m, x.z); return m; };
-        const zIn = zMin(inside), zC = {}; for (const key in cont) { cont[key].sort(byZ); zC[key] = zMin(cont[key]); }
-        let first = !inside.length; list = ground.slice();
+        const zIn = zMin(inside); for (const key in cont) { cont[key].sort(byZ); zC[key] = zMin(cont[key]); }
+        let first = !inside.length;
         for (const it of mixed) {
           if (it.k === 0 && it.P.role === 'shell') {
             if (!first && it.z >= zIn) { first = true; for (const x of inside) list.push(x); }
-            for (const key of [it.P.id, it.P.group]) if (key && cont[key] && !done.has(key) && it.z >= zC[key]) { done.add(key); for (const x of cont[key]) list.push(x); }
+            for (const key of [it.P.id, it.P.group]) if (key && cont[key] && !inserted.has(key) && it.z >= zC[key]) { inserted.add(key); for (const x of cont[key]) list.push(x); }
           }
           list.push(it);
         }
         if (!first) for (const x of inside) list.push(x);
-        for (const key in cont) if (!done.has(key)) for (const x of cont[key]) list.push(x);
-      } else list = ground.concat(items.concat(inside, ...Object.values(cont)).sort(byZ));
+        for (const key in cont) if (!inserted.has(key)) for (const x of cont[key]) list.push(x);
+      } else {
+        mixed.push(...items, ...inside);
+        for (const key in cont) for (const item of cont[key]) mixed.push(item);
+        mixed.sort(byZ);
+        for (const item of mixed) list.push(item);
+      }
       list.forEach((it, i) => { if (it.k === 0) it.P.vis[it.fi] = i; });
 
       // 画
-      ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, cv.width, cv.height);
-      ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, cv.width, cv.height);
-      if (scene.ground !== false) groundShadow();
-      drawn = [];
+      ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+      if (!motion) {
+        paint.set('fillStyle', '#fff');
+        ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+        if (scene.ground !== false) groundShadow();
+      }
+      drawn.length = 0;
       const LW = style.line * dpr * clamp(Math.min(W, H) / 620, 0.85, 1.25);
       ctx.lineJoin = 'round'; ctx.lineCap = 'round';
-      // 描边时机：一条边要等到“碰到它两个端点的所有本部件可见面”都填完色再画。
-      // 填色带马克笔错位，邻面的填色会盖住刚画好的线头，放大后像虚线。
-      const due = new Map();
-      const strokeP = (P, own) => {
-        const lineA = 1 - 0.5 * P.glass;
-        if (P.glass > 0.5) ctx.setLineDash([5 * dpr, 4 * dpr]);
-        if (P.glowA > 0.02) {
-          ctx.beginPath(); for (const ei of own) { const e = P.E[ei]; seg(P, e.a, e.b, ei, 1, e.crease); }
-          // 浅色宽描边当光晕，用 darken 混合：只在比它更亮的地方（白纸）显出来，
-          // 不会盖住已经画好的深色线和零件（否则分批描的线会被下一批光晕盖成虚线）
-          ctx.globalCompositeOperation = 'darken';
-          ctx.globalAlpha = Math.min(1, P.alpha) * P.glowA; ctx.strokeStyle = css(mixc(P.base, WHITE, 0.62 - 0.22 * pulse)); ctx.lineWidth = LW * 4.2; ctx.stroke();
-          ctx.globalCompositeOperation = 'source-over';
+      // Flush at each paint boundary to preserve the painter's order.
+      const strokeP = (P, edges) => {
+        const alpha = Math.min(1, P.alpha), lineAlpha = alpha * (1 - 0.5 * P.glass);
+        const dash = P.glass > 0.5;
+        const width = LW * (P.def.lineScale || 1) * (P.isOn ? 1.15 : 1);
+        if (motion) {
+          motion.edges(P, edges, P.lineColor, lineAlpha, width);
+          return;
         }
-        const lc = P.isDim ? mixc(P.line, WHITE, 0.45) : P.line;
-        ctx.beginPath(); for (const ei of own) { const e = P.E[ei]; seg(P, e.a, e.b, ei, 1, e.crease); }
-        ctx.globalAlpha = Math.min(1, P.alpha) * lineA; ctx.strokeStyle = css(lc); ctx.lineWidth = LW * (P.def.lineScale || 1) * (P.isOn ? 1.15 : 1); ctx.stroke();
-        if (P.glass < 0.5) {
-          ctx.beginPath(); for (const ei of own) { const e = P.E[ei]; seg(P, e.a, e.b, ei, 2, e.crease); }
-          ctx.globalAlpha = Math.min(1, P.alpha) * lineA * 0.32; ctx.lineWidth = LW * 0.6; ctx.stroke();
-        }
-        ctx.setLineDash([]);
+        if (P.glowColor) strokes.add(P, edges, 1, P.glowColor, alpha * P.glowA, LW * 4.2, dash, 'darken', dpr);
+        strokes.add(P, edges, 1, P.lineColor, lineAlpha, width, dash, 'source-over', dpr);
+        if (!fast && P.glass < 0.5) strokes.add(P, edges, 2, P.lineColor, lineAlpha * 0.32, LW * 0.6, false, 'source-over', dpr);
       };
-      const drawDue = (i) => { const g = due.get(i); if (!g) return; due.delete(i); for (const [Q, own] of g) strokeP(Q, own); };
+      // Edges with shared endpoints are drawn after their last adjacent visible face.
+
       for (let i = 0; i < list.length; i++) {
         const it = list[i];
-        if (it.k === 1) { dotItem(it); drawDue(i); continue; }
-        if (it.k === 2) { haloItem(it); drawDue(i); continue; }
+        if (it.k === 1) { dotItem(it); continue; }
+        if (it.k === 2) { haloItem(it); continue; }
         const P = it.P, f = P.mesh.f[it.fi];
-        const d = dot(it.n, LIGHT), tone = d > 0.55 ? 0 : d > 0.1 ? 1 : 2;
-        const pal = P.isOn ? P.hot : P.isDim ? P.off : P.tones;
-        let col = pal[tone];
-        if (P.isOn) col = mixc(col, WHITE, (1 - pulse) * 0.18);
-        const a = P.a;
-        // 填色（马克笔错位）
-        ctx.beginPath(); const ox = P.fill[0] * dpr, oy = P.fill[1] * dpr;
-        const xs = [], ys = [];
-        for (const L of [f.i, ...(f.h || [])]) { L.forEach((vi, k) => { const x = P.sx[vi] + ox * (1 - P.glass), y = P.sy[vi] + oy * (1 - P.glass); if (k) ctx.lineTo(x, y); else ctx.moveTo(x, y); if (L === f.i) { xs.push(P.sx[vi]); ys.push(P.sy[vi]); } }); ctx.closePath(); }
-        ctx.globalAlpha = a; ctx.fillStyle = css(col); ctx.fill('evenodd');
-        if (P.glass < 0.5 && a > 0.9) { ctx.strokeStyle = css(col); ctx.lineWidth = 0.6 * dpr; ctx.stroke(); }
-        if (style.hatch && P.def.hatch !== false && tone === 2 && P.glass < 0.4) { ctx.globalAlpha = a * 0.28 * (1 - P.glass * 2) * (P.isDim ? 0.5 : 1); ctx.fillStyle = hatch; ctx.fill('evenodd'); }
-        drawn.push({ P, xs, ys, a });
+        const tone = it.tone, col = P.fillColors[tone], a = P.a;
+        // Marker fill is offset from the ink, including the inner contours.
+        const ox = P.fill[0] * dpr * (1 - P.glass), oy = P.fill[1] * dpr * (1 - P.glass);
+        if (motion) {
+          it.triangles ||= triangulate(P.mesh.v, P.loops[it.fi], P.fn[it.fi]);
+          motion.face(P, it.triangles, ox, oy, col, a);
+        } else {
+          ctx.beginPath();
+          for (const loop of P.loops[it.fi]) {
+            const first = loop[0];
+            ctx.moveTo(P.sx[first] + ox, P.sy[first] + oy);
+            for (let j = 1; j < loop.length; j++) {
+              const vertex = loop[j];
+              ctx.lineTo(P.sx[vertex] + ox, P.sy[vertex] + oy);
+            }
+            ctx.closePath();
+          }
+          paint.set('globalAlpha', a);
+          paint.set('fillStyle', col);
+          ctx.fill('evenodd');
+          if (!fast && P.glass < 0.5 && a > 0.9) {
+            paint.set('strokeStyle', col);
+            paint.set('lineWidth', 0.6 * dpr);
+            ctx.stroke();
+          }
+          if (!fast && style.hatch && P.def.hatch !== false && tone === 2 && P.glass < 0.4) {
+            paint.set('globalAlpha', a * 0.28 * (1 - P.glass * 2) * (P.isDim ? 0.5 : 1));
+            paint.set('fillStyle', hatch);
+            ctx.fill('evenodd');
+          }
+        }
+        drawn.push(it);
         // 描边：拥有这条边的面（两侧里后画的那个）负责；等端点周围的面都填完再画
         for (const ei of f.e) {
           const e = P.E[ei]; let owner = -1, visN = 0;
@@ -1008,19 +1245,29 @@ function advanceAll(dt){
           if (owner !== i) continue;
           if (!e.crease && !(visN === 1 && e.f.length === 2)) continue;
           let at = i;
-          for (const v of [e.a, e.b]) for (const fj of P.vf[v]) { const o = P.vis[fj]; if (o > at) at = o; }
-          let g = due.get(at); if (!g) due.set(at, (g = new Map()));
-          let arr = g.get(P); if (!arr) g.set(P, (arr = [])); arr.push(ei);
+          for (const fj of P.vf[e.a]) if (P.vis[fj] > at) at = P.vis[fj];
+          for (const fj of P.vf[e.b]) if (P.vis[fj] > at) at = P.vis[fj];
+          const item = list[at];
+          (item.edges ||= []).push(ei);
         }
-        drawDue(i);
+        if (it.edges?.length) {
+          strokeP(P, it.edges);
+          strokes.flush();
+          paint.dash(false, dpr);
+          it.edges.length = 0;
+        }
       }
-      ctx.globalAlpha = 1;
-      if (hoverPart == null && mouse && !ptrs.size) { /* 悬停拾取在下面做 */ }
+      paint.set('globalAlpha', 1);
+      pickingDpr = dpr;
       const hp = mouse && !ptrs.size ? pick(mouse) : null;
       stageHover(hp);
+      if ((hoverPart || pinned) !== focus) easing = true;
+      if (motion) motion.finish();
       layoutLabels(active, anyActive, dt);
+      dpr = displayDpr;
+      firstRender = false;
       updateCaption(si);
-      if (knob) knob.style.left = `calc(${(u * 100).toFixed(3)}% - 1.5px)`;
+      if (knob) { const left = `calc(${(u * 100).toFixed(3)}% - 1.5px)`; if (knob.style.left !== left) knob.style.left = left; }
       chips.forEach((c, i) => c.classList.toggle('on', i === si));
       const rd = scene.readout ? scene.readout(u, api) : '';
       if (rd !== lastRead) { readout.textContent = rd; readout.hidden = !rd; lastRead = rd; }
@@ -1043,7 +1290,7 @@ function advanceAll(dt){
     }
     let labelHover = false;
     labelLayer.addEventListener('pointerover', () => { labelHover = true; });
-    labelLayer.addEventListener('pointerout', () => { labelHover = false; });
+    labelLayer.addEventListener('pointerout', () => { labelHover = false; invalidate(); });
 
     function groundShadow() {
       const Bc = cam.Bc, mn = B0.mn, mx = B0.mx;
@@ -1059,15 +1306,17 @@ function advanceAll(dt){
       ctx.stroke(); ctx.restore();
     }
     function dotItem(it) {
-      ctx.globalAlpha = it.a; ctx.beginPath(); ctx.arc(it.q[0], it.q[1], it.r, 0, TAU);
-      ctx.fillStyle = css(it.F.c); ctx.fill(); ctx.globalAlpha = it.a * 0.7; ctx.lineWidth = 0.9 * dpr; ctx.strokeStyle = css(mixc(it.F.c, DEEP, 0.5)); ctx.stroke(); ctx.globalAlpha = 1;
+      if (motion) { motion.dot(it.q[0], it.q[1], it.r, cachedColor(it.F.c), it.a); return; }
+      paint.set('globalAlpha', it.a); ctx.beginPath(); ctx.arc(it.q[0], it.q[1], it.r, 0, TAU);
+      paint.set('fillStyle', css(it.F.c)); ctx.fill(); paint.set('globalAlpha', it.a * 0.7); paint.set('lineWidth', 0.9 * dpr); paint.set('strokeStyle', css(mixc(it.F.c, DEEP, 0.5))); ctx.stroke(); paint.set('globalAlpha', 1);
     }
     function haloItem(it) {
       const P = it.P; if (it.r <= 0) return;
-      const ga = P.def.glow === 'active' ? P.glowA * (0.75 + 0.25 * Math.sin(performance.now() / 260)) : 1;
+      const ga = P.def.glow === 'active' ? P.glowA * (0.75 + 0.25 * (pulse - 0.65) / 0.35) : 1;
+      if (fast) return;
       const g = ctx.createRadialGradient(it.q[0], it.q[1], 0, it.q[0], it.q[1], it.r * 2.2);
       g.addColorStop(0, css(mixc(P.base, WHITE, 0.3), 0.55 * P.alpha * ga)); g.addColorStop(0.5, css(P.base, 0.22 * P.alpha * ga)); g.addColorStop(1, css(P.base, 0));
-      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(it.q[0], it.q[1], it.r * 2.2, 0, TAU); ctx.fill();
+      paint.set('fillStyle', g); ctx.beginPath(); ctx.arc(it.q[0], it.q[1], it.r * 2.2, 0, TAU); ctx.fill();
     }
 
     /* —— 标签布局：左右两列，按锚点高度排开，铅笔引线 —— */
@@ -1085,7 +1334,10 @@ function advanceAll(dt){
         L.ax = q[0] / dpr; L.ay = q[1] / dpr;
         if (pinMode) {
           const x = L.ax - 11, y = L.ay - 11;
-          L.x = L.x == null ? x : L.x + (x - L.x) * k; L.y = L.y == null ? y : L.y + (y - L.y) * k;
+          const priorX = L.x, priorY = L.y;
+          L.x = priorX == null ? x : priorX + (x - priorX) * k;
+          L.y = priorY == null ? y : priorY + (y - priorY) * k;
+          L.priorX = priorX; L.priorY = priorY;
           pins.push(L); continue;
         }
         if (!L.side || Math.abs(L.ax - center) > 14) L.side = L.ax < center ? -1 : 1;
@@ -1098,6 +1350,7 @@ function advanceAll(dt){
         }
         for (const L of pins) {
           L.x = clamp(L.x, 4, W - 26); L.y = clamp(L.y, 4, H - 30);
+          if (Math.abs(L.x - L.priorX) > 0.05 || Math.abs(L.y - L.priorY) > 0.05) easing = true;
           L.el.style.transform = `translate(${L.x.toFixed(1)}px,${L.y.toFixed(1)}px)`;
         }
         return;
@@ -1111,7 +1364,7 @@ function advanceAll(dt){
         for (let i = col.length - 1; i >= 0; i--) { const L = col[i].L; L.ty = Math.min(L.ty, lim - L.h); lim = L.ty - gap; }
         for (const P of col) {
           const L = P.L, x = ci === 0 ? Math.max(8, cam.labelW - 6 - L.w) : W - cam.labelW + 6;
-          L.y = L.y == null ? L.ty : L.y + (L.ty - L.y) * k; L.x = L.x == null ? x : L.x + (x - L.x) * k;
+          L.y = L.y == null ? L.ty : ease(L.y, L.ty, k, 0.05); L.x = L.x == null ? x : ease(L.x, x, k, 0.05);
           L.el.style.transform = `translate(${L.x.toFixed(1)}px,${L.y.toFixed(1)}px)`;
         }
       });
@@ -1222,22 +1475,65 @@ function advanceAll(dt){
     }
 
     /* —— URL 参数定位状态：?xr=1&step=3&u=0.4&yaw=200&pitch=40&zoom=2&focus=piston&explode=1&labels=2&press=1,2&mode=buttons&play=0&audit=1 —— */
-    raf = requestAnimationFrame(frame);
     const ctl = {
-      snapshot(){ return JSON.parse(JSON.stringify({u,uAbs,expl,expT,yaw,pitch,zoom,xray,xrayT,labelMode,selected:pinned?.id||null,playing,allPlayback,allFinished,speedIx,focusGoal,focusCur,viewHold,mode,done:[...done],segment:curSeg?.id||null})); },
-      restore(s){ playing=false;allPlayback=!!s.allPlayback;allFinished=!!s.allFinished;u=s.u;uAbs=s.uAbs;expl=s.expl;expT=s.expT;yaw=s.yaw;pitch=s.pitch;zoom=s.zoom;xray=s.xray;xrayT=s.xrayT;labelMode=s.labelMode;speedIx=s.speedIx;pinned=byId[s.selected]||null;focusGoal=s.focusGoal;focusCur=s.focusCur;camGoal=null;vyaw=vpitch=0;sway=0;viewHold=true;mode=s.mode;done.clear();s.done.forEach(x=>done.add(x));curSeg=pbs.find(x=>x.id===s.segment)||null;lastStep=-2;if(pinned)showNote(pinned);syncButtons(); },
-      step(n){ const s=steps[Number(n)-1];if(!s)return false;playing=false;setU(s.from+(s.to-s.from)*.45);curSeg=pbs.find(b=>u>=b.from&&u<b.to)||null;lastStep=-2;syncButtons();return true; },
-      inspect({part,step,xray:inside=true}){this.step(step||1);playing=false;expl=expT=0;xray=xrayT=inside?1:0;labelMode=0;runAnim(u);worlds(0);pinned=byId[part]||null;viewHold=true;camGoal=null;bake();if(pinned){focusGoal=ap(pinned.W,pinned.anchor);focusCur=focusGoal.slice();zoom=Math.min(view0.zoom*1.35,1.8);showNote(pinned);}syncButtons();},
-      query(params){const get=k=>params.get(k);if(get('step'))this.step(Number(get('step')));if(params.has('xr'))this.xray(Number(get('xr')));if(params.has('explode'))this.explode(clamp(Number(get('explode'))||0,0,1));if(params.has('labels'))this.labels(get('labels')==='off'?2:get('labels')==='all'?0:1);const v={};for(const k of ['yaw','pitch','zoom'])if(params.has(k)&&Number.isFinite(Number(get(k))))v[k]=Number(get(k));if(Object.keys(v).length)this.view(v);if(params.has('play'))this.play(get('play')==='1'&&!reduce);if(get('audit')==='1')return this.audit();},
-      audit(o){const wasPlaying=playing;playing=false;const result=audit(o);playing=wasPlaying;wrap.dataset.audit=JSON.stringify(result);return result;},
-      destroy(){if(destroyed)return;destroyed=true;cancelAll();playing=false;cancelAnimationFrame(raf);sizeObserver.disconnect();document.removeEventListener('visibilitychange',visibilityHandler);lifecycle.abort();clearTimeout(toastT);host.replaceChildren();},
+      snapshot(){ invalidate(); return JSON.parse(JSON.stringify({u,uAbs,expl,expT,yaw,pitch,zoom,xray,xrayT,labelMode,selected:pinned?.id||null,playing,allPlayback,allFinished,speedIx,focusGoal,focusCur,viewHold,mode,done:[...done],segment:curSeg?.id||null})); },
+      restore(s){ playing=false;allPlayback=!!s.allPlayback;allFinished=!!s.allFinished;u=s.u;uAbs=s.uAbs;expl=s.expl;expT=s.expT;yaw=s.yaw;pitch=s.pitch;zoom=s.zoom;xray=s.xray;xrayT=s.xrayT;labelMode=s.labelMode;speedIx=s.speedIx;pinned=byId[s.selected]||null;focusGoal=s.focusGoal;focusCur=s.focusCur;camGoal=null;vyaw=vpitch=0;viewHold=true;mode=s.mode;done.clear();s.done.forEach(x=>done.add(x));curSeg=pbs.find(x=>x.id===s.segment)||null;lastStep=-2;if(pinned)showNote(pinned);syncButtons(); },
+      step(n){ invalidate(); const s=steps[Number(n)-1];if(!s)return false;playing=false;setU(s.from+(s.to-s.from)*.45);curSeg=pbs.find(b=>u>=b.from&&u<b.to)||null;lastStep=-2;syncButtons();return true; },
+      inspect({part,step,xray:inside=true}){this.step(step||1);playing=false;expl=expT=0;xray=xrayT=inside?1:0;labelMode=0;runAnim(u);worlds(0);pinned=byId[part]||null;viewHold=true;camGoal=null;if(pinned){focusGoal=ap(pinned.W,pinned.anchor);focusCur=focusGoal.slice();zoom=Math.min(view0.zoom*1.35,1.8);showNote(pinned);}syncButtons();},
+      query(params) {
+        const number = key => {
+          const value = params.get(key);
+          return value !== null && value.trim() !== '' && Number.isFinite(Number(value)) ? Number(value) : null;
+        };
+        const modeValue = params.get('mode');
+        if (modeValue === 'auto' || modeValue === 'buttons') this.mode?.(modeValue);
+        for (const key of (params.get('press') || '').split(',').filter(Boolean)) {
+          press(Number.isFinite(Number(key)) ? Number(key) : key, true);
+        }
+        if (number('step') !== null) this.step(number('step'));
+        if (number('u') !== null) { playing = false; setU(clamp(number('u'), 0, 0.9999)); }
+        if (number('xr') !== null) this.xray(number('xr'));
+        if (number('explode') !== null) this.explode(clamp(number('explode'), 0, 1));
+        const labels = { off: 2, all: 0, step: 1, 0: 2, 1: 1, 2: 1 };
+        if (Object.hasOwn(labels, params.get('labels'))) this.labels(labels[params.get('labels')]);
+        const view = {};
+        for (const key of ['yaw', 'pitch', 'zoom']) if (number(key) !== null) view[key] = number(key);
+        if (params.get('focus')) {
+          runAnim(u); worlds(expl);
+          const value = params.get('focus'), coords = value.split(',').map(Number);
+          const part = byId[value] || parts.find(P => P.label === value);
+          if (coords.length === 3 && coords.every(Number.isFinite)) focusGoal = coords;
+          else if (part) focusGoal = ap(part.W, part.anchor);
+          if (focusGoal) { focusCur = focusGoal.slice(); viewHold = true; }
+        }
+        if (Object.keys(view).length) this.view(view);
+        syncButtons();
+        if (params.has('play')) this.play(params.get('play') === '1' && !reduce);
+        if (params.get('audit') === '1') { liveDiagnostics = true; return this.audit(); }
+        runAnim(u); worlds(expl); publishDiagnostics();
+        diagnosticsPending = true;
+        invalidate();
+      },
+      audit(o){
+        const wasPlaying = playing;
+        playing = false;
+        let result;
+        try { result = audit(o); }
+        finally { playing = wasPlaying; }
+        wrap.dataset.audit = JSON.stringify(result);
+        publishDiagnostics();
+        diagnosticsPending = true;
+        invalidate();
+        return result;
+      },
+      destroy(){if(destroyed)return;destroyed=true;cancelAll();playing=false;cancelAnimationFrame(raf);clearTimeout(qualityTimer);sizeObserver.disconnect();document.removeEventListener('visibilitychange',visibilityHandler);lifecycle.abort();clearTimeout(toastT);host.replaceChildren();},
 
       get u() { return u; }, setU, play(v = true) {if(v&&mode==='buttons'&&!curSeg){const next=pbs.find(b=>!done.has(b.id)&&b.needs.every(n=>done.has(n)));if(next)press(next.id,reduce);else playing=false;}else playing=v;syncButtons();},
       xray(v = 1) { xrayT = v ? 1 : 0; xray = xrayT; syncButtons(); }, explode(v = 1) { setExplosion(v,true); },
-      view(o) { viewHold=true;bake(); if (o.yaw != null) yaw = o.yaw; if (o.pitch != null) pitch = o.pitch; if (o.zoom != null) zoom = o.zoom; idle = -1e9; },
-      labels(m) { labelMode = m; syncButtons(); }, hover(id) { hoverPart = id ? byId[id] : null; },
-      pin(id) { pinned = id ? byId[id] : null; if (pinned) showNote(pinned); },
-      settle() { runAnim(u); wantView(stepAt(u)); if (camGoal) { yaw = camGoal.yaw; pitch = camGoal.pitch; zoom = camGoal.zoom; camGoal = null; } focusCur = (focusGoal || B0.c).slice(); },
+      view(o) { viewHold=true;if (o.yaw != null) yaw = o.yaw; if (o.pitch != null) pitch = o.pitch; if (o.zoom != null) zoom = o.zoom; invalidate(); },
+      labels(m) { labelMode = m; syncButtons(); }, hover(id) { hoverPart = id ? byId[id] : null; invalidate(); },
+      pin(id) { pinned = id ? byId[id] : null; if (pinned) showNote(pinned); invalidate(); },
+      settle() { runAnim(u); wantView(stepAt(u)); if (camGoal) { yaw = camGoal.yaw; pitch = camGoal.pitch; zoom = camGoal.zoom; camGoal = null; } focusCur = (focusGoal || B0.c).slice(); invalidate(); },
       steps() { return steps.map((s) => [s.from, s.to]); },
       press(k) { return press(k); }, mode(m) { setMode(m); }, 
       info() {
@@ -1248,6 +1544,7 @@ function advanceAll(dt){
       stats() { return { parts: parts.length, faces: parts.reduce((s, P) => s + P.mesh.f.length, 0) }; }
     };
 
+    invalidate();
     return ctl;
   }
 

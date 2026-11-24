@@ -38,5 +38,16 @@
       "x": 340,
       "y": 922.125
     }
+  },
+  {
+    "id": "oxygen-concentrator",
+    "url": "/figures/oxygen-concentrator.html?step=2&xr=1&play=0&labels=off&yaw=-29&pitch=14&zoom=1.1",
+    "clip": {
+      "x": 220,
+      "y": 859,
+      "width": 1000,
+      "height": 620
+    },
+    "capture": "canvas pixels"
   }
 ]
