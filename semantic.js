@@ -8,16 +8,12 @@ const partRoles={
 };
 const stepRoles={'care-bed':['mechanical','mechanical','mechanical','mechanical','mechanical','mechanical','mechanical'],'smart-toilet':['heat','body','heat','heat','heat','water'],'smoke-alarm':['electric','mechanical','electric','electric','alarm','electric'],'accessible-shower':['body','body','body','heat','water','alarm']};
 const flowRoles={'care-bed':{},'smart-toilet':{self:'water',wash:'heat',air:'heat',flush:'water'},'smoke-alarm':{rise:'mechanical',enter:'mechanical',ir:'electric',scatter:'electric',signal:'electric',beep:'alarm'},'accessible-shower':{hot:'heat',cold:'water',mix:'heat',spray:'heat',drain:'water'}};
-export function prepareScene(scene,id){
- if(id==='oxygen-concentrator') {
-  scene.autoplay=false;
-  scene.sway=false;
-  scene.fig='图 5';
-  return scene;
- }
+export function prepareScene(scene,id,figure){
+ scene.autoplay=false;
+ if (figure != null) scene.fig='图 '+figure;
+ if (!Object.hasOwn(partRoles,id)) return scene;
  const roles=partRoles[id];scene.parts.forEach(p=>{const role=Object.keys(roles).find(k=>roles[k].includes(p.id))||'mechanical';p.color=palette[role];p.note=`${meanings[role]}。${p.note||p.name||p.label||'概念部件'}（教学示意，非实物认证。）`;});
  (scene.steps||[]).forEach((s,i)=>s.color=palette[stepRoles[id][i]||'mechanical']);
  (scene.flows||[]).forEach(f=>f.color=palette[flowRoles[id][f.id]||(id==='care-bed'?'electric':'water')]);
- scene.autoplay=false;scene.sway=false;scene.fig='图 '+(['care-bed','smart-toilet','smoke-alarm','accessible-shower'].indexOf(id)+1);
  return scene;
 }

@@ -6,8 +6,9 @@ function fn(js,name){
  let i=js.indexOf('{',start),depth=1;for(i++;depth;i++){if(js[i]==='{')depth++;if(js[i]==='}')depth--;}
  return js.slice(start,i);
 }
+const js=readFileSync('engine.js','utf8');
 for(const {id} of JSON.parse(readFileSync('content/products.json','utf8'))){
- const js=readFileSync(`models/${id}.js`,'utf8'),scene=(await import(`../models/${id}.js`)).createScene();
+ const scene=(await import(`../models/${id}.js`)).createScene();
  const steps=scene.steps.map((s,i,a)=>({...s,from:s.from??i/a.length,to:s.to??(i+1)/a.length}));
  const pbs=(scene.buttons||[]).map((b,i)=>({...b,from:steps[i].from,to:steps[i].to}));
  const c=createContext({steps,pbs,cycle:scene.cycle,SPEEDS:[1,.5,.25,2],allButtons:[],allStatus:{},wrap:{dataset:{}},syncButtons(){},resetView(){}});

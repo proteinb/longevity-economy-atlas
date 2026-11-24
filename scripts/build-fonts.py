@@ -7,7 +7,7 @@ import argparse,json,hashlib
 from fontTools import subset
 from fontTools.ttLib import TTFont, woff2
 p=argparse.ArgumentParser();p.add_argument('--sources',type=Path,required=True);a=p.parse_args();r=Path(__file__).resolve().parents[1]
-files=[r/'site.js',r/'semantic.js',r/'site.css',r/'content/products.json',r/'scripts/build-site.py',r/'scripts/build-sketch.py',*list((r/'model-source/sketch').glob('*.*'))]
+files=[r/'site.js',r/'engine.js',r/'semantic.js',r/'site.css',r/'content/products.json',r/'scripts/build-site.py',r/'scripts/build-sketch.py',*list((r/'model-source/sketch').glob('*.*'))]
 chars=''.join(sorted(set(''.join(x.read_text() for x in files)+'0123456789°℃⌀≥≤×%↗←→／—−·，。暂停播放全部当前返回部件名称未命名图模型算例检查原视图')))
 (r/'fonts/characters.txt').write_text(chars)
 manifest={}

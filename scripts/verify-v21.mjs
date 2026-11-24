@@ -5,7 +5,19 @@ import {spawnSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
 import {resolve,dirname} from 'node:path';
 const ids=['care-bed','smart-toilet','smoke-alarm','accessible-shower'];const read=p=>readFileSync(p,'utf8');
-const geometry=s=>JSON.stringify(s.parts.map(({id,parent,mesh,at,rot,scale,anchor})=>({id,parent,mesh,at,rot,scale,anchor})));
+const geometry=s=>JSON.stringify(s.parts.map(({id,parent,mesh:{v,f},at,rot,scale,anchor})=>({id,parent,v,f,at,rot,scale,anchor})));
+const runtime=read('engine.js').replace(/^/gm,'  ');
+const modelPaths=JSON.parse(read('content/products.json')).map(p=>`models/${p.id}.js`);
+const sharedImports=new Set();
+for(const path of modelPaths) {
+ const source=read(path);
+ const shared=source.match(/^import \{ defineModel \} from "(\.\.\/engine\.js\?v=[a-f0-9]+)";$/m);
+ assert(shared,`${path} must use the shared engine`);
+ assert(!/requestAnimationFrame|function drawDue|function strokeP/.test(source),`${path} must be scene-only`);
+ sharedImports.add(shared[1]);
+}
+assert.equal(sharedImports.size,1);
+
 const results=[];
 const baseline=JSON.parse(read('model-source/sketch/baseline.json'));
 for(const id of ids){
@@ -13,7 +25,7 @@ for(const id of ids){
  assert.equal(createHash('sha256').update(source).digest('hex'),baseline.files[id].sha256,`${id}: canonical baseline changed`);
  const c=createContext({});runInContext(rawScripts.find(s=>s.includes('root.Sketch3D =')),c);c.Sketch3D.mount=(_,f)=>c.scene=f(c.Sketch3D.S,c.Sketch3D.M);runInContext(rawScripts.find(s=>s.includes("\nSketch3D.mount('#app'")),c);
  const module=await import(`../models/${id}.js`),scene=module.createScene();assert.equal(geometry(scene),geometry(c.scene),`${id}: geometry/kinematics registry changed`);
- const js=read(`models/${id}.js`);assert(!js.includes('Sketch3D.last'));assert(!js.includes('document.documentElement.dataset'));
+ const js=runtime;assert(!js.includes('Sketch3D.last'));assert(!js.includes('document.documentElement.dataset'));
  const before=geometry(scene);for(let n=0;n<=720;n++){const poses={};scene.animate(n/720,{u:n/720,t:n*scene.cycle/720,step:0,stepU:0,xray:0,set:(key,p)=>poses[key]=p,flow(){},view(){}});for(const p of Object.values(poses))for(const v of Object.values(p))if(Array.isArray(v))v.forEach(x=>assert(Number.isFinite(x)));}assert.equal(geometry(scene),before);
  const engine=rawScripts.find(s=>s.includes('root.Sketch3D =')),matrix=engine.slice(engine.indexOf('  const add ='),engine.indexOf('  const AXIS =')),worlds=engine.slice(engine.indexOf('    function worlds(e)'),engine.indexOf('    /* —— 取景'));
  const vectors=JSON.parse(engine.match(/const explodeVectors=(\{[^;]+\});/)[1]),parts=scene.parts.map(p=>({id:p.id,def:{...p,explode:vectors[p.id]||p.explode||[0,0,0]}})),byId=Object.fromEntries(parts.map(p=>[p.id,p]));parts.forEach(p=>p.parent=p.def.parent?byId[p.def.parent]:null);const order=[],seen=new Set();function visit(p){if(seen.has(p))return;if(p.parent)visit(p.parent);seen.add(p);order.push(p);}parts.forEach(visit);const w=createContext({order,poses:{}});runInContext('const D2R=Math.PI/180;'+matrix+worlds,w);runInContext('worlds(0)',w);const closed=JSON.stringify(parts.map(p=>p.W));for(let n=0;n<50;n++){runInContext('worlds(1);worlds(0)',w);assert.equal(JSON.stringify(parts.map(p=>p.W)),closed);}for(const t of [.25,.5,.75]){runInContext(`worlds(${t})`,w);parts.forEach(p=>p.W.forEach(x=>assert(Number.isFinite(x))));}
@@ -51,7 +63,7 @@ const home=read('index.html');assert(!home.includes('iframe'));assert(!home.incl
 for(const {id} of products)assert(existsSync(`cards/${id}.png`),`missing real model capture ${id}`);
 for(const f of ['fonts/aging-hand-subset.woff2','fonts/aging-caveat-subset.woff2','fonts/aging-hand-subset.ttf','fonts/aging-caveat-subset.ttf','licenses/fonts/zcool-OFL.txt','licenses/fonts/caveat-OFL.txt'])assert(existsSync(f),f);
 for(const [key,m]of Object.entries(JSON.parse(read('licenses/fonts/manifest.json')))){const file='fonts/'+(key==='zcool'?'aging-hand-subset.ttf':'aging-caveat-subset.ttf');assert.equal(createHash('sha256').update(readFileSync(file)).digest('hex'),m.subset_sha256);}
-let links=0;for(const page of ['index.html','product.html','care-bed.html','figures/smart-toilet.html','figures/smoke-alarm.html','figures/accessible-shower.html','figures/oxygen-concentrator.html','atlas.html'])for(const m of read(page).matchAll(/(?:href|src)="([^"\s]+)"/g)){const u=m[1];if(/^(https?:|data:|mailto:)/.test(u))continue;const [raw,hash]=u.split('#'),path=decodeURIComponent(raw.split('?')[0]);const target=path==='/'?resolve('index.html'):path.startsWith('/')?resolve('.'+path):path?resolve(dirname(page),path):resolve(page);assert(existsSync(target),`${page} missing ${u}`);if(hash&&target.endsWith('.html'))assert(read(target).includes(`id="${hash}"`),`${page} missing #${hash}`);links++;}
+let links=0;for(const page of ['index.html','product.html','atlas.html',...products.map(p=>p.id==='care-bed'?'care-bed.html':`figures/${p.id}.html`)])for(const m of read(page).matchAll(/(?:href|src)="([^"\s]+)"/g)){const u=m[1];if(/^(https?:|data:|mailto:)/.test(u))continue;const [raw,hash]=u.split('#'),path=decodeURIComponent(raw.split('?')[0]);const target=path==='/'?resolve('index.html'):path.startsWith('/')?resolve('.'+path):path?resolve(dirname(page),path):resolve(page);assert(existsSync(target),`${page} missing ${u}`);if(hash&&target.endsWith('.html'))assert(read(target).includes(`id="${hash}"`),`${page} missing #${hash}`);links++;}
 assert(!/<iframe/i.test(read('care-bed.html')));assert(!read('site.js').includes('Sketch3D.last'));
 for(const p of products){assert.equal(p.points.length,3);p.sources.forEach(s=>['kind','version','date','scope','clause','status'].forEach(k=>assert(s[k])));}
 console.log(`PASS ${links} local links/anchors and font hashes; Agingbuy 2.1:`,JSON.stringify(results));
