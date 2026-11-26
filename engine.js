@@ -338,6 +338,15 @@ transition:background .25s,box-shadow .25s,opacity .3s,border-color .25s,font-we
 .sk.pins .sk-label{padding:0;width:22px;height:22px;justify-content:center;border-radius:50%;border-color:var(--ink);background:#fff;font-family:var(--hand);font-size:14px}
 .sk.pins .sk-label span,.sk.pins .sk-label .sk-sw{display:none}
 .sk.pins .sk-label .sk-no{display:block}
+.sk.adaptive-pins .sk-part-name:not([data-part-id]){display:none}
+.sk.adaptive-pins .sk-label{transition:none;box-shadow:none}
+.sk.adaptive-pins .sk-label.sk-pin-name{height:23px;padding:0 5px;border-radius:5px;background:#fff;justify-content:flex-start}
+.sk.adaptive-pins .sk-pin-name.on{background:var(--tint)}
+.sk.adaptive-pins .sk-pin-name .sk-no{display:none}
+.sk.adaptive-pins .sk-pin-name span{display:block;font:12px/1 system-ui,sans-serif}
+.sk.adaptive-pins .sk-label[aria-expanded=true]{border-color:#284f73;outline:2px solid #c3d8ed;opacity:1}
+.sk-pin-note{left:0;top:0;pointer-events:auto;width:max-content;max-width:min(230px,calc(100% - 16px));overflow-wrap:anywhere}
+
 .sk-hint{position:absolute;left:12px;bottom:10px;font-size:13px;color:var(--muted);background:rgba(255,255,255,.85);padding:2px 6px;border-radius:8px;pointer-events:none}
 .sk-readout{position:absolute;right:12px;bottom:9px;max-width:calc(100% - 24px);text-align:right;font-family:var(--hand);font-size:18px;line-height:1.25;background:rgba(255,255,255,.9);padding:1px 8px;border-radius:9px;pointer-events:none}
 .sk.compact .sk-readout{font-size:14px;left:10px;right:10px;text-align:center;margin:0 auto;width:fit-content}
@@ -500,6 +509,46 @@ function mountScene(host, scene, { auditGeometry = false, qualifyNotes = false }
   const hint = el('div', 'sk-hint', scene.hint || '拖动旋转 · 滚轮缩放 · 点部件看说明 · 双击复位'); stage.appendChild(hint);
   const readout = el('div', 'sk-readout'); stage.appendChild(readout);
   const tip = el('div', 'sk-tip'); tip.hidden = true; stage.appendChild(tip);
+  const pinNote = el('div', 'sk-tip sk-pin-note');
+  pinNote.hidden = true;
+  pinNote.setAttribute('role', 'status');
+  stage.appendChild(pinNote);
+  let openPin = null;
+
+  function closePinNote() {
+    if (!openPin) return;
+    openPin.L.el.setAttribute('aria-expanded', 'false');
+    openPin = null;
+    pinNote.hidden = true;
+  }
+
+  function activateLabel(part) {
+    if (!adaptivePins) {
+      pinned = pinned === part ? null : part;
+      showNote(part);
+      return;
+    }
+    if (openPin === part) {
+      closePinNote();
+      return;
+    }
+    closePinNote();
+    openPin = part;
+    part.L.el.setAttribute('aria-expanded', 'true');
+    pinNote.replaceChildren(el('b', '', part.label),
+      document.createTextNode(part.note || '此部件暂无补充说明。'));
+    pinNote.hidden = false;
+    invalidate();
+  }
+
+  document.addEventListener('click', (event) => {
+    if (!openPin) return;
+    const path = event.composedPath();
+    if (!path.includes(labelLayer) && !path.includes(pinNote)) closePinNote();
+  }, { capture: true, signal: lifecycle.signal });
+  stage.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') closePinNote();
+  });
   wrap.appendChild(stage);
   const display = cv.getContext('2d');
   const preview = document.createElement('canvas');
@@ -557,8 +606,17 @@ function mountScene(host, scene, { auditGeometry = false, qualifyNotes = false }
     L.appendChild(el('b', 'sk-no', String(i + 1))); L.appendChild(el('i', 'sk-sw')); L.appendChild(el('span', '', P.label));
     L.addEventListener('pointerenter', () => { hoverPart = P; invalidate(); });
     L.addEventListener('pointerleave', () => { if (hoverPart === P) hoverPart = null; invalidate(); });
-    L.addEventListener('click', (e) => { e.stopPropagation(); pinned = pinned === P ? null : P; showNote(P); });
-    L.tabIndex=0;L.setAttribute('role','button');L.setAttribute('aria-label',P.label);L.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();pinned=pinned===P?null:P;showNote(P);}});labelLayer.appendChild(L);
+    L.addEventListener('click', (event) => { event.stopPropagation(); activateLabel(P); });
+    L.tabIndex = 0;
+    L.setAttribute('role', 'button');
+    L.setAttribute('aria-label', P.label);
+    L.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      event.preventDefault();
+      if (adaptivePins) event.stopPropagation();
+      activateLabel(P);
+    });
+    labelLayer.appendChild(L);
     P.L = { el: L, side: 0, y: null, x: null, w: 80, h: 26, ty: 0 };
   });
 
@@ -664,7 +722,7 @@ function mountScene(host, scene, { auditGeometry = false, qualifyNotes = false }
   let labelMode = scene.labels === 'step' ? 1 : scene.labels === false ? 2 : 0; // 0 全部 1 仅当前 2 关
   const view0 = Object.assign({ yaw: -32, pitch: 20, zoom: 1 }, scene.view || {});
   let yaw = view0.yaw, pitch = view0.pitch, zoom = view0.zoom, vyaw = 0, vpitch = 0;
-  let hoverPart = null, pinned = null, W = 0, H = 0, dpr = 1, compact = false, pinMode = false, lastStep = -2, lastRead = '';
+  let hoverPart = null, pinned = null, W = 0, H = 0, dpr = 1, compact = false, pinMode = false, adaptivePins = false, lastStep = -2, lastRead = '';
   let camGoal = null, lastViewKey = '', reqView = null, focusGoal = null, focusCur = null;
   let mode = pbs.length && scene.mode === 'buttons' ? 'buttons' : 'auto', curSeg = null;
   const done = new Set();
@@ -676,7 +734,10 @@ function mountScene(host, scene, { auditGeometry = false, qualifyNotes = false }
     if (expl > 0 || expT > 0) return;
     const v = reqView || (steps[si] && steps[si].view) || (anyViews || reqView ? {} : null);
     if (!v) return;
-    const goal = Object.assign({}, view0, v), key = goal.yaw + ',' + goal.pitch + ',' + goal.zoom + ',' + goal.focus;
+    const goal = Object.assign({}, view0, v);
+    // Automatic close-ups leave a margin for names on compact diagrams. Explicit zoom still works.
+    if (adaptivePins && labelMode !== 2) goal.zoom = Math.min(goal.zoom, 1.75);
+    const key = goal.yaw + ',' + goal.pitch + ',' + goal.zoom + ',' + goal.focus;
     if (key !== lastViewKey) { lastViewKey = key; camGoal = goal; focusGoal = goal.focus || null; }
   }
   // One-shot playback is driven by the instance render loop.
@@ -870,7 +931,12 @@ function mountScene(host, scene, { auditGeometry = false, qualifyNotes = false }
   window.addEventListener('resize', resize, { signal: lifecycle.signal });
   coarsePointer.addEventListener('change', resize, { signal: lifecycle.signal });
   resize();
-  if (document.fonts && document.fonts.ready) document.fonts.ready.then(()=>{if(!destroyed)resize();});
+  if (document.fonts?.ready) document.fonts.ready.then(() => {
+    if (destroyed) return;
+    for (const { L } of labeled) L.nameWidth = undefined;
+    resize();
+    if (adaptivePins) invalidate();
+  });
 
   /* —— 交互 —— */
   const ptrs = new Map(); let dragMoved = 0, pinch0 = 0, zoom0 = 1, mouse = null;
@@ -944,6 +1010,22 @@ function mountScene(host, scene, { auditGeometry = false, qualifyNotes = false }
     const cap = Math.max(4, Math.floor((H - 50) / 31)) * 2;
     const pm = compact || (labelMode === 0 && labeled.length > cap);
     if (pm !== pinMode) { pinMode = pm; wrap.classList.toggle('pins', pm); }
+    const adaptive = pinMode && (compact || coarsePointer.matches);
+    if (adaptive !== adaptivePins) {
+      adaptivePins = adaptive;
+      wrap.classList.toggle('adaptive-pins', adaptive);
+      if (adaptive) tip.hidden = true;
+      else {
+        closePinNote();
+        hovCanvas = null;
+        for (const P of labeled) {
+          P.L.el.classList.remove('sk-pin-name');
+          P.L.el.style.removeProperty('width');
+          P.L.el.removeAttribute('aria-expanded');
+          P.L.el.tabIndex = 0;
+        }
+      }
+    }
     const D = Bc.r * 4.2, labelW = pinMode || labelMode === 2 ? 0 : Math.min(170, W * 0.2);
     const avail = Math.min(W - labelW * 2, H - 40);
     const K = (avail * 0.5 * 0.9 / Bc.r) * zoom * dpr;
@@ -1061,6 +1143,7 @@ function mountScene(host, scene, { auditGeometry = false, qualifyNotes = false }
     }
   }
 
+  const pinModelRects = [];
   function render(dt) {
     const displayDpr = dpr;
     if (fast) dpr = Math.min(dpr, 0.75);
@@ -1074,6 +1157,7 @@ function mountScene(host, scene, { auditGeometry = false, qualifyNotes = false }
     if (focus) active.add(focus);
     const anyActive = active.size > 0;
 
+    pinModelRects.length = 0;
     // 变换顶点
     items.length = shells.length = inside.length = ground.length = list.length = mixed.length = 0;
     for (const key in cont) cont[key].length = 0;
@@ -1109,6 +1193,17 @@ function mountScene(host, scene, { auditGeometry = false, qualifyNotes = false }
         const scale = cam.D / (cam.D - cz);
         P.sx[i] = cam.cx + cx * scale * cam.K;
         P.sy[i] = cam.cy - cy * scale * cam.K;
+      }
+      if (adaptivePins && labelMode !== 2 && P.role !== 'ground') {
+        let left = Infinity, right = -Infinity, top = Infinity, bottom = -Infinity;
+        for (let i = 0; i < n; i++) {
+          left = Math.min(left, P.sx[i]); right = Math.max(right, P.sx[i]);
+          top = Math.min(top, P.sy[i]); bottom = Math.max(bottom, P.sy[i]);
+        }
+        pinModelRects.push({
+          x: left / dpr - 3, y: top / dpr - 3,
+          w: (right - left) / dpr + 6, h: (bottom - top) / dpr + 6
+        });
       }
       P.vis.fill(-1);
       const glass = P.role === 'shell' || P.def.glass ? xray : 0;
@@ -1307,7 +1402,7 @@ function mountScene(host, scene, { auditGeometry = false, qualifyNotes = false }
     stageHover(hp);
     if ((hoverPart || pinned) !== focus) easing = true;
     if (motion) motion.finish();
-    layoutLabels(active, anyActive, dt);
+    layoutLabels(active, anyActive, dt, step?.set);
     dpr = displayDpr;
     firstRender = false;
     updateCaption(si);
@@ -1319,6 +1414,10 @@ function mountScene(host, scene, { auditGeometry = false, qualifyNotes = false }
 
   let hovCanvas = null;
   function stageHover(P) {
+    if (adaptivePins) {
+      if (!labelHover) hoverPart = null;
+      return;
+    }
     if (P !== hovCanvas) {
       hovCanvas = P;
       const nm = P && (P.label || P.def.name);
@@ -1389,19 +1488,115 @@ function mountScene(host, scene, { auditGeometry = false, qualifyNotes = false }
     }
   }
 
+  function pinSlot(ax, ay, w, h, blockers, top, bottom) {
+    const minX = 5, maxX = W - w - 6, maxY = bottom - h;
+    if (maxX < minX || maxY < top) return null;
+    const targetX = clamp(ax - w / 2, minX, maxX);
+    const targetY = clamp(ay - h / 2, top, maxY);
+    const fits = (x, y) => !blockers.some(b => (
+      x < b.x + b.w + 4 && x + w + 4 > b.x &&
+      y < b.y + b.h + 4 && y + h + 4 > b.y
+    ));
+    if (fits(targetX, targetY)) return { x: targetX, y: targetY, w, h };
+    let best = null, bestDistance = Infinity;
+    for (let y = top; ; y = Math.min(y + 8, maxY)) {
+      for (let x = minX; ; x = Math.min(x + 8, maxX)) {
+        const distance = (x - targetX) ** 2 + (y - targetY) ** 2;
+        if (distance < bestDistance && fits(x, y)) {
+          bestDistance = distance;
+          best = { x, y, w, h };
+        }
+        if (x === maxX) break;
+      }
+      if (y === maxY) break;
+    }
+    return best;
+  }
+
+  function layoutAdaptivePins(pins, stepParts) {
+    const top = partName.dataset.partId ? 48 : 7;
+    const bottom = H - (scene.readout ? 52 : 10);
+    const named = new Map();
+    const occupied = [];
+    const blockers = pinModelRects.slice();
+    ctx.save();
+    ctx.font = '12px system-ui, sans-serif';
+    for (const part of pins) {
+      if (!expl && !stepParts?.has(part)) continue;
+      const L = part.L;
+      L.nameWidth ??= Math.ceil(ctx.measureText(part.label).width) + 14;
+      const slot = pinSlot(L.ax, L.ay, L.nameWidth, 23, blockers, top, bottom);
+      if (!slot) continue;
+      named.set(part, slot);
+      occupied.push(slot);
+      blockers.push(slot);
+    }
+
+    ctx.lineWidth = dpr;
+    for (const part of pins) {
+      const L = part.L;
+      const nameSlot = named.get(part);
+      const slot = nameSlot || pinSlot(L.ax, L.ay, 22, 22, occupied, top, bottom);
+      L.el.classList.toggle('sk-pin-name', !!nameSlot);
+      L.el.classList.toggle('off', !slot);
+      L.el.style.width = nameSlot ? L.nameWidth + 'px' : '';
+      if (!slot) { L.y = null; L.el.tabIndex = -1; continue; }
+      if (!nameSlot) occupied.push(slot);
+      L.x = slot.x; L.y = slot.y;
+      L.el.style.transform = `translate(${L.x.toFixed(1)}px,${L.y.toFixed(1)}px)`;
+      if (!nameSlot) continue;
+      const sx = clamp(L.ax, slot.x, slot.x + slot.w);
+      const sy = clamp(L.ay, slot.y, slot.y + slot.h);
+      ctx.strokeStyle = css(mixc(part.base, INK, 0.6));
+      ctx.fillStyle = ctx.strokeStyle;
+      ctx.beginPath();
+      ctx.moveTo(sx * dpr, sy * dpr);
+      ctx.lineTo(L.ax * dpr, L.ay * dpr);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(L.ax * dpr, L.ay * dpr, 2.5 * dpr, 0, TAU);
+      ctx.fill();
+    }
+    ctx.restore();
+    if (!openPin) return;
+    if (!pins.includes(openPin) || openPin.L.y == null) {
+      closePinNote();
+      return;
+    }
+    const L = openPin.L, anchor = named.get(openPin);
+    const w = pinNote.offsetWidth, h = pinNote.offsetHeight;
+    const pinWidth = anchor?.w || 22, pinHeight = anchor?.h || 22;
+    const px = L.x + pinWidth / 2, py = L.y + pinHeight / 2;
+    const x = clamp(px - w / 2, 6, W - w - 7);
+    const below = L.y + pinHeight + 7;
+    const y = below + h < H - 7 ? below : Math.max(6, L.y - h - 7);
+    const closeToPin = slot => slot && Math.hypot(
+      px - clamp(px, slot.x, slot.x + slot.w),
+      py - clamp(py, slot.y, slot.y + slot.h)
+    ) <= 50;
+    const nearby = pinSlot(x + w / 2, y + h / 2, w, h, [...pinModelRects, ...occupied], top, H - 10);
+    const withoutNames = [...named.values(), { x: L.x, y: L.y, w: pinWidth, h: pinHeight }];
+    const aroundNames = closeToPin(nearby) ? nearby
+      : pinSlot(x + w / 2, y + h / 2, w, h, withoutNames, top, H - 10);
+    const slot = closeToPin(aroundNames) ? aroundNames : { x, y };
+    pinNote.style.transform = `translate(${slot.x}px,${slot.y}px)`;
+  }
+
   /* —— 标签布局：左右两列，按锚点高度排开，铅笔引线 —— */
-  function layoutLabels(active, anyActive, dt) {
+  function layoutLabels(active, anyActive, dt, stepParts) {
     const k = Math.min(1, dt * 12), cols = [[], []], center = cam.cx / dpr, pins = [];
     for (const P of labeled) {
-      const L = P.L, show = P.shown && P.alpha > 0.05 && (labelMode === 0 || (labelMode === 1 && active.has(P)));
+      const L = P.L, show = P.shown && P.alpha > 0.05 && (labelMode === 0 || (labelMode === 1 && (adaptivePins || active.has(P))));
       const on = active.has(P);
       L.el.classList.toggle('on', on && !!(api.step >= 0 || pinned === P || hoverPart === P));
       L.el.classList.toggle('dim', anyActive && !on && labelMode === 0);
       L.el.classList.toggle('off', !show);
+      if (adaptivePins) L.el.tabIndex = show ? 0 : -1;
       if(P.li){P.li.classList.toggle('on',on);P.li.setAttribute('aria-pressed',String(pinned===P));}
       if (!show) { L.y = null; continue; }
       const c = ap(cam.V, ap(P.W, P.anchor)), q = proj(c);
       L.ax = q[0] / dpr; L.ay = q[1] / dpr;
+      if (adaptivePins) { pins.push(P); continue; }
       if (pinMode) {
         pins.push(L);
         if (expl > 0) continue;
@@ -1415,6 +1610,7 @@ function mountScene(host, scene, { auditGeometry = false, qualifyNotes = false }
       if (!L.side || Math.abs(L.ax - center) > 14) L.side = L.ax < center ? -1 : 1;
       cols[L.side < 0 ? 0 : 1].push(P);
     }
+    if (adaptivePins) { layoutAdaptivePins(pins, stepParts); return; }
     if (pinMode) {
       if (expl > 0) {
         layoutExplodedPins(pins);
