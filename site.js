@@ -27,9 +27,53 @@ async function navigate(p,{history=true}={}){
  if(!templates){const r=await fetch('/detail-templates.json',{cache:'no-cache'});if(!r.ok)throw Error('详情文本不可用');templates=await r.json();}
  if(ticket!==generation)return;main.innerHTML=templates[p.id];document.title=p.name+' · AgingBuy';if(history){window.history.pushState({},'',p.path);main.scrollIntoView({block:'start',behavior:'auto'});}await model(p);
 }
-document.addEventListener('click',e=>{const a=e.target.closest('a');if(!a||e.metaKey||e.ctrlKey||e.shiftKey||e.altKey||a.target)return;if(a.dataset.product){e.preventDefault();navigate(products.find(p=>p.id===a.dataset.product)).catch(()=>location.href=a.href);}else if(a.hasAttribute('data-home')&&originalHome){e.preventDefault();cleanup();current=null;main.innerHTML=originalHome;const hash=['#figures','#sources'].includes(a.hash)?a.hash:'';history.pushState({},'','/'+hash);document.title='AgingBuy · 把照护放回生活';(hash?document.querySelector(hash):main).scrollIntoView({block:'start',behavior:'auto'});}});
-addEventListener('popstate',()=>{const id=new URLSearchParams(location.search).get('item');const p=products.find(p=>p.id===id||p.path===location.pathname);if(p)navigate(p,{history:false});else if(originalHome){cleanup();main.innerHTML=originalHome;current=null;}else location.reload();});
+function loadContactQr(){
+ const figure=main.querySelector('[data-contact-qr]');
+ if(!figure)return;
+ const image=new Image();
+ image.alt='微信咨询二维码';
+ image.decoding='async';
+ image.onload=()=>{
+  if(!figure.isConnected)return;
+  figure.prepend(image);
+  figure.hidden=false;
+ };
+ image.src=figure.dataset.contactQr;
+}
+function restoreHome(){
+ cleanup();
+ current=null;
+ main.innerHTML=originalHome;
+ document.title='AgingBuy · 把照护放回生活';
+ loadContactQr();
+}
+document.addEventListener('click',e=>{
+ const a=e.target.closest('a');
+ if(!a||e.metaKey||e.ctrlKey||e.shiftKey||e.altKey||a.target)return;
+ if(a.dataset.product){
+  e.preventDefault();
+  navigate(products.find(p=>p.id===a.dataset.product)).catch(()=>location.href=a.href);
+ }else if(a.hasAttribute('data-home')&&originalHome){
+  e.preventDefault();
+  if(current||!main.querySelector('#contact'))restoreHome();
+  else cleanup();
+  const hash=['#figures','#sources','#contact'].includes(a.hash)?a.hash:'';
+  history.pushState({},'','/'+hash);
+  (hash?document.querySelector(hash):main).scrollIntoView({block:'start',behavior:'auto'});
+ }
+});
+addEventListener('popstate',()=>{
+ const id=new URLSearchParams(location.search).get('item');
+ const p=products.find(p=>p.id===id||p.path===location.pathname);
+ if(p)navigate(p,{history:false});
+ else if(originalHome){
+  if(current||!main.querySelector('#contact'))restoreHome();
+  else cleanup();
+  if(location.hash==='#contact')document.getElementById('contact').scrollIntoView();
+ }else location.reload();
+});
 addEventListener('pagehide',cleanup);
 addEventListener('pageshow',e=>{if(e.persisted&&current)navigate(current,{history:false}).catch(()=>location.reload());});
 const query=new URLSearchParams(location.search),initial=products.find(p=>p.id===(query.get('item')||document.body.dataset.product));
 if(initial){if(document.body.dataset.product===initial.id&&!query.get('item'))model(initial);else navigate(initial,{history:false}).catch(()=>location.replace(initial.path));}
+else loadContactQr();
