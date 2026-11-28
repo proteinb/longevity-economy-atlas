@@ -21,7 +21,7 @@ for name in [f'aging-{font}-subset.{ext}' for font in ['hand','caveat'] for ext 
  if f.exists():s=re.sub(r'/fonts/'+re.escape(name)+r'(?:\?v=[a-f0-9]+)?','/fonts/'+name+'?v='+hashlib.sha256(f.read_bytes()).hexdigest()[:12],s)
 css.write_text(s)
 head=f'''<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta name="description" content="把照护放回生活。用彩绘交互图鉴看懂{esc(name_list)}。"><meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'"><title>AgingBuy · 把照护放回生活</title><link rel="stylesheet" href="/site.css?v=2.1"></head><body>'''
-mast='''<a class="skip" href="#main">跳到正文</a><div class="page"><header class="mast"><a href="/" class="wordmark" data-home>agingbuy<span>日常，值得更好。</span></a><nav aria-label="主要导航"><a href="/#figures" data-home>产品图鉴</a><a href="/#sources" data-home>资料来源</a><a href="/atlas.html">产业研究 ↗</a><a href="/#contact" data-home>联系我们</a></nav></header><main id="main">'''
+mast='''<a class="skip" href="#main">跳到正文</a><div class="page"><header class="mast"><a href="/" class="wordmark" data-home><img src="/assets/agingbuy-wordmark.svg" alt="agingbuy"><span>日常，值得更好。</span></a><nav aria-label="主要导航"><a href="/#figures" data-home>产品图鉴</a><a href="/#sources" data-home>资料来源</a><a href="/atlas.html">产业研究 ↗</a><a href="/#contact" data-home>联系我们</a></nav></header><main id="main">'''
 contact_email='protein_jun@foxmail.com'
 email_link=f'<a class="contact-email" href="mailto:{contact_email}">{contact_email}</a>'
 foot=f'''</main>
@@ -93,7 +93,7 @@ for dest in [R/'index.html',R/'product.html',*detail_pages,R/'detail-templates.j
   image=R/'cards'/f'{p["id"]}.png'
   if image.exists():s=s.replace('/cards/'+p['id']+'.png','/cards/'+p['id']+'.png?v='+hashlib.sha256(image.read_bytes()).hexdigest()[:12])
  dest.write_text(s)
-active=[R/'site.js',R/'site.css',R/'catalog.js',R/'semantic.js',R/'engine.js',R/'motion-renderer.js',R/'vendor/earcut.js',R/'detail-templates.json',*sorted((R/'models').glob('*.js')),*sorted((R/'cards').glob('*.png')),*sorted((R/'fonts').glob('*.ttf')),*sorted((R/'fonts').glob('*.woff2'))]
+active=[R/'assets/agingbuy-wordmark.svg',R/'site.js',R/'site.css',R/'catalog.js',R/'semantic.js',R/'engine.js',R/'motion-renderer.js',R/'vendor/earcut.js',R/'detail-templates.json',*sorted((R/'models').glob('*.js')),*sorted((R/'cards').glob('*.png')),*sorted((R/'fonts').glob('*.ttf')),*sorted((R/'fonts').glob('*.woff2'))]
 revision=hashlib.sha256(b''.join(p.read_bytes() for p in active)).hexdigest()[:16]
 for dest in [R/'index.html',R/'product.html',*detail_pages]:
  dest.write_text(dest.read_text().replace('/site.js?v=2.1','/site.js?v='+revision).replace('/site.css?v=2.1','/site.css?v='+revision))

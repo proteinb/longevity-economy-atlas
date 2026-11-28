@@ -1,9 +1,10 @@
 {
   "version": "2.1",
-  "revision": "55e6ced004ea6212",
+  "revision": "cd5927b361cc68d5",
   "assets": {
+    "assets/agingbuy-wordmark.svg": "f67c03dec4da7948b19e8bd00271fed9cb15fe09fa1f6edd628b325d5766d4c8",
     "site.js": "796ebb9e07065ac7f6ed27d1698ff475ed917da0cc372fee3b71a2332505ab9d",
-    "site.css": "e4a9901430129e86afd93719cd327f7babe3c21d30c22982b234dcaf91f9fcfc",
+    "site.css": "1a198fc74cd76e2a32eed1af42bcedafc23ef0ec2a9b88aa6bb65dbd57f588a3",
     "catalog.js": "fb5bc59badba1917d8297986a46cf10556fa9de5f31b5afd2a836caf96d11d45",
     "semantic.js": "15ac94ede097b7555a4eba223895be28fb7d2aced660861a9771c937a7fcb6d0",
     "engine.js": "8ef8f7997a6c75f319a64a7d292734393b0595ddb653551c0ec3f4a6364c2b16",
