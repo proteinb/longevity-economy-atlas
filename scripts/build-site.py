@@ -24,10 +24,27 @@ head=f'''<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta nam
 mast='''<a class="skip" href="#main">跳到正文</a><div class="page"><header class="mast"><a href="/" class="wordmark" data-home>agingbuy<span>日常，值得更好。</span></a><nav aria-label="主要导航"><a href="/#figures" data-home>产品图鉴</a><a href="/#sources" data-home>资料来源</a><a href="/atlas.html">产业研究 ↗</a><a href="/#contact" data-home>联系我们</a></nav></header><main id="main">'''
 contact_email='protein_jun@foxmail.com'
 email_link=f'<a class="contact-email" href="mailto:{contact_email}">{contact_email}</a>'
-foot=f'''</main><footer><a class="wordmark" href="/" data-home>agingbuy</a><p>理解产品，选择更好的日常。</p><a href="/atlas.html#evidence">原有研究与证据边界 ↗</a>{email_link}</footer></div><script type="module" src="/site.js?v=2.1"></script></body></html>'''
+foot=f'''</main>
+<footer>
+  <div class="footer-research">
+    <h2>产业研究</h2>
+    <ul>
+      <li><a href="/atlas.html">进入产业图谱 ↗</a></li>
+      <li><a href="/全球长寿经济市场分析与三家高成长企业.md">全球市场与企业案例 ↗</a></li>
+      <li><a href="/atlas.html#clusters">BioBAY 地域研究 ↗</a></li>
+      <li><a href="/atlas.html#evidence">原始资料、来源与日期 ↗</a></li>
+    </ul>
+  </div>
+  <div class="footer-resources">
+    <a href="/atlas.html#evidence">资料来源</a>
+    <a href="/licenses/fonts/README.md">字体与许可</a>
+    {email_link}
+  </div>
+</footer>
+</div><script type="module" src="/site.js?v=2.1"></script></body></html>'''
 def card(p,i):
  return f'''<article class="card"><a class="card-image" href="/product.html?item={p['id']}" data-product="{p['id']}"><img src="/cards/{p['id']}.png" alt="{p['name']}固定步骤彩绘模型" width="1000" height="620" loading="lazy"><span class="card-number">FIG. {i+1:02d}</span></a><div class="card-copy"><p class="eyebrow">{p['tag']}</p><h3>{p['name']}</h3><p>{p['line']}</p><a class="button" href="/product.html?item={p['id']}" data-product="{p['id']}">透视看看 <span aria-hidden="true">↗</span></a></div></article>'''
-home=f'''<section class="intro"><p class="eyebrow">CARE, IN EVERYDAY LIFE / 01—{count:02d}</p><h1>把照护，<br>放回<span>生活。</span></h1><div><p class="intro-copy">看懂一件产品，<br>从一张会动的图开始。</p><p class="muted">转动 · 透视 · 动手操作</p></div></section><section id="figures" aria-labelledby="figures-title"><div class="section-heading"><h2 id="figures-title">日常照护图鉴</h2><p>{count_label}件产品，一次看懂一件。</p></div><div class="cards">'''+''.join(card(p,i) for i,p in enumerate(products))+f'''</div></section><section id="sources" class="source-intro"><p class="eyebrow">READ THE EVIDENCE</p><h2>图可以直观，<br>依据要分清。</h2><div><p>模型讲原理，资料讲边界。</p><p>详情逐项区分官方题录、厂商资料、二手转引和模拟假设。未核实的条款不当作认证，动画读数不代表真实产品性能。</p><p class="small">{count_label}份用户底稿 · 更新 2026-11-25 · <a href="/licenses/fonts/README.md">字体与许可</a></p></div></section><section class="research"><p class="eyebrow">THE BIGGER PICTURE</p><h2>产品背后，<br>是一个长寿经济网络。</h2><div><a class="button" href="/atlas.html">进入产业图谱 ↗</a><a href="/全球长寿经济市场分析与三家高成长企业.md">全球市场与企业案例 ↗</a><a href="/atlas.html#clusters">BioBAY 地域研究 ↗</a><a href="/atlas.html#evidence">原始资料、来源与日期 ↗</a></div></section>'''
+home=f'''<section class="intro"><p class="eyebrow">日常照护 · 共 {count} 件产品图解</p><h1>把照护，<br>放回<span>生活。</span></h1><div><p class="intro-copy">看懂一件产品，<br>从一张会动的图开始。</p><p class="muted">转动 · 透视 · 动手操作</p></div></section><section id="figures" aria-labelledby="figures-title"><div class="section-heading"><h2 id="figures-title">日常照护图鉴</h2><p>{count_label}件产品，一次看懂一件。</p></div><div class="cards">'''+''.join(card(p,i) for i,p in enumerate(products))+f'''</div></section>'''
 home+=f'''<section id="contact" class="contact" aria-labelledby="contact-title">
   <h2 id="contact-title">让每一件照护产品，被看懂</h2>
   <div class="contact-content">
@@ -40,6 +57,9 @@ home+=f'''<section id="contact" class="contact" aria-labelledby="contact-title">
       <figcaption>微信咨询</figcaption>
     </figure>
   </div>
+</section>'''
+home+='''<section id="sources" class="source-note" aria-label="依据说明">
+  <p>图解讲原理，不代表真实产品性能；<a href="/atlas.html#evidence">资料来源</a>见各产品详情页。</p>
 </section>'''
 (R/'index.html').write_text(head+mast+home+foot)
 def detail(p):
