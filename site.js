@@ -1,6 +1,7 @@
 const revision=new URL(import.meta.url).searchParams.get('v')||'2.1';
 import {products} from './catalog.js?v=fb5bc59badba';
 const main=document.querySelector('main');let controller=null,generation=0,templates=null,saved=null,current=null;
+const homeAnchors=['#figures','#sources','#contact'];
 const originalHome=location.pathname==='/'||location.pathname.endsWith('/index.html')?main.innerHTML:null;
 function cleanup(){generation++;controller?.destroy();controller=null;saved=null;}
 async function model(p){
@@ -57,7 +58,7 @@ document.addEventListener('click',e=>{
   e.preventDefault();
   if(current||!main.querySelector('#contact'))restoreHome();
   else cleanup();
-  const hash=['#figures','#sources','#contact'].includes(a.hash)?a.hash:'';
+  const hash=homeAnchors.includes(a.hash)?a.hash:'';
   history.pushState({},'','/'+hash);
   (hash?document.querySelector(hash):main).scrollIntoView({block:'start',behavior:'auto'});
  }
@@ -69,7 +70,7 @@ addEventListener('popstate',()=>{
  else if(originalHome){
   if(current||!main.querySelector('#contact'))restoreHome();
   else cleanup();
-  if(location.hash==='#contact')document.getElementById('contact').scrollIntoView();
+  if(homeAnchors.includes(location.hash))document.querySelector(location.hash).scrollIntoView({block:'start'});
  }else location.reload();
 });
 addEventListener('pagehide',cleanup);
